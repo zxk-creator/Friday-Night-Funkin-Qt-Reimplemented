@@ -1,0 +1,38 @@
+//
+// Created by 44224 on 3/28/2026.
+//
+
+#include <src/include/audio/FunkinSoundSystem.h>
+#include "src/include/utils/GlobalSystemUtils.h"
+#include "src/include/audio/FunkinSound.h"
+
+FunkinSoundSystem::FunkinSoundSystem() {
+    // 一定要先把SaveSystem new出来，再调用这个！！！！！否则崩溃
+    uiSoundVolume = GlobalSystemUtils::getSoundVolume(ESoundType::uiSound);
+    vocalSoundVolume = GlobalSystemUtils::getSoundVolume(ESoundType::vocal);
+    instSoundVolume = GlobalSystemUtils::getSoundVolume(ESoundType::inst);
+
+    // 首先初始化声音引擎
+    ma_engine_init(nullptr,&engine);
+    // 再初始化音频组
+    ma_sound_group_init(&engine,0,nullptr,&uiSoundGroup);
+    ma_sound_group_init(&engine,0,nullptr,&vocalSoundGroup);
+    ma_sound_group_init(&engine,0,nullptr,&instSoundGroup);
+
+    // 再初始化默认音效
+    confirmSound = new FunkinSound(true,);
+}
+
+void FunkinSoundSystem::setSoundVolume(float newVolume, ESoundType soundType) {
+    ma_sound_group* targetModifySoundGroup = nullptr;
+    switch (soundType) {
+        case ESoundType::uiSound: targetModifySoundGroup = &uiSoundGroup; uiSoundVolume = newVolume; break;
+        case ESoundType::vocal: targetModifySoundGroup = &vocalSoundGroup; vocalSoundVolume = newVolume; break;
+        case ESoundType::inst: targetModifySoundGroup = &instSoundGroup; instSoundVolume = newVolume; break;
+    }
+    if (targetModifySoundGroup)
+        ma_sound_group_set_volume(targetModifySoundGroup, newVolume);
+}
+
+
+
