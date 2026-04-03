@@ -5,6 +5,8 @@
 #pragma once
 
 #include "InstanceLibrary.h"
+#include "Math.h"
+#include "cassert"
 // 解耦代理类，防止外部依赖特定文件导致重构困难
 class GlobalSystemUtils {
 public:
@@ -17,7 +19,7 @@ public:
 
     // 从存储实例中获取，最权威
     static float getSoundVolume(ESoundType soundType) {
-        assert(InstanceLibrary::funkinSoundSystem != nullptr && "保存系统未初始化！请查看是否初始化了保存系统，然后才能获得音量大小！");
+        assert(InstanceLibrary::saveSystem != nullptr && "保存系统未初始化！请查看是否初始化了保存系统，然后才能获得音量大小！");
         return InstanceLibrary::saveSystem->getSoundVolume(soundType);
     }
 

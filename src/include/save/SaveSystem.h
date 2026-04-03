@@ -4,8 +4,7 @@
 
 #pragma once
 #include "Save.h"
-#include "src/include/audio/SoundEnum.h"
-#include "src/include/utils/Math.h"
+#include "audio/SoundEnum.h"
 
 // 专门用来操作Save类，保存游戏的接口，只负责保存，不负责别的
 class SaveSystem{
@@ -21,7 +20,7 @@ public:
     }
 
 protected:
-    ~SaveSystem() {}
+    ~SaveSystem() = default;
 
 public:
     // 这个setSoundVolume只负责写入保存文件

@@ -8,15 +8,14 @@
 #include "src/include/utils/GlobalSystemUtils.h"
 
 class InstanceLibrary {
-private:
+public:
     static inline FunkinSoundSystem* funkinSoundSystem = nullptr;
     static inline SaveSystem* saveSystem = nullptr;
-    friend class GlobalSystemUtils;
 
-public:
     // main函数里面一定要记得调用这个！！！！！！！！！！！！！否则崩溃
-    static void initSubSystem() {
+    static void initSubSystems() {
         saveSystem = new SaveSystem();
         funkinSoundSystem = new FunkinSoundSystem();
+        funkinSoundSystem->initBuildInSounds();
     }
 };

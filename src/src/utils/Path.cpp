@@ -64,7 +64,7 @@ void Path::checkWhetherModDirExists() {
     qInfo() << "Mod目录已就绪:" << baseDir;
 }
 
-QString Path::getModDir(const QString& modRelativePath) {
+QString Path::getModDir() {
     QString baseDir;
 #ifdef Q_OS_ANDROID
     baseDir = QStandardPaths::QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation) + "/FNFMods";
@@ -72,30 +72,63 @@ QString Path::getModDir(const QString& modRelativePath) {
     baseDir = QCoreApplication::applicationDirPath() + "/mods";
 #endif
     QDir finalDir(baseDir);
-    QString absolutePath = finalDir.absoluteFilePath(modRelativePath);
+    if (!finalDir.exists()) {
+        finalDir.mkpath("."); // 确保 baseDir 存在
+        qInfo() << "mod目录不存在！正在创建....";
+    }
+    qInfo() << "mod目录："<< baseDir;
 
-    return QDir::toNativeSeparators(absolutePath);
+    return QDir::toNativeSeparators(baseDir);
 }
 
-QString Path::finalPath(const QString &filePath) {
-    QString finalPath;
+QString Path::finalModPath(const QString &filePath) {
     if (filePath.isEmpty()) {
         qWarning() << "警告：传入了空路径！";
-        return "";
-    }
-    // qrc路径，这个稍微复杂一点，因为得先把数据拷贝到磁盘上才能被miniaudio使用
-    if (filePath.startsWith("qrc:/") || filePath.startsWith(":/")) {
-        QString tempPath = QDir::tempPath() + QDir::separator() + QFileInfo(filePath).fileName();
-        if (!QFile::exists(tempPath)) {
-            QFile::copy(filePath, tempPath);
-            QFile::setPermissions(tempPath, QFileDevice::ReadOwner | QFileDevice::ReadUser);
-        }
-        finalPath = QDir::toNativeSeparators(tempPath);
-    }
-    // 绝对路径直接返回
-    else {
-        finalPath = QDir::toNativeSeparators(filePath);
+        return {};
     }
 
+    QString resultPath;
+    qInfo() << "原始路径：" << filePath;
+
+    // miniaudio等外部C库无法直接读取内存中的qrc，必须释放到磁盘
+    if (filePath.startsWith(":/") || filePath.startsWith("qrc:/")) {
+        QString cleanPath = filePath.startsWith("qrc:/") ? filePath.mid(3) : filePath;
+        QFileInfo qrcInfo(cleanPath);
+        QString tempPath = QDir::tempPath() + "/FunkinCache/" + qrcInfo.fileName();
+
+        QDir().mkpath(QFileInfo(tempPath).absolutePath());
+
+        // 强制覆盖旧缓存，防止文件损坏或已存在
+        if (QFile::exists(tempPath)) {
+            QFile::remove(tempPath);
+        }
+
+        if (!QFile::copy(cleanPath, tempPath)) {
+            // 打印具体错误原因
+            qCritical() << "无法将资源文件" << cleanPath << "拷贝到" << tempPath
+                        << " 原因：" << QFile(cleanPath).errorString();
+            return {};
+        }
+
+        // 赋予读写权限
+        QFile::setPermissions(tempPath, QFileDevice::ReadOwner | QFileDevice::WriteOwner | QFileDevice::ReadUser);
+        resultPath = tempPath;
+    }
+    else {
+        // 普通路径(包括绝对与相对路径)
+        QFileInfo checkFile(filePath);
+        if (checkFile.isRelative()) {
+            QDir base(getModDir());
+            resultPath = base.absoluteFilePath(filePath);
+        } else {
+            resultPath = filePath;
+        }
+    }
+
+    // 规范化路径并转为原生分隔符
+    resultPath = QDir::cleanPath(resultPath);
+    QString finalPath = QDir::toNativeSeparators(resultPath);
+
+    qInfo() << "最终绝对路径：" << finalPath;
     return finalPath;
 }

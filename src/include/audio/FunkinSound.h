@@ -5,9 +5,10 @@
 
 #include "SoundEnum.h"
 #include "QString"
-#include "src/include/utils/GlobalSystemUtils.h"
+#include "utils/GlobalSystemUtils.h"
+#include "utils/Path.h"
 #include "QDebug"
-#include "src/thirdParty/miniaudio/miniaudio.h"
+#include "miniaudio/miniaudio.h"
 
 // 每一个可以在游戏内播放的音效都是一个FunkinSound对象
 class FunkinSound
@@ -21,7 +22,7 @@ public:
     /**
      *
      * @param bLoadToRAM 为true：加载到内存
-     * @param fileAbsolutePath 文件绝对路径
+     * @param filePath 文件路径，支持绝对路径，相对路径，qrc:路径
      * @param soundType 声音类型
      * @param soundName 给这个声音取得名字
      */
@@ -30,6 +31,7 @@ public:
         ma_uint32 flag = 0;
         // 指针，共享同一份实例。一定存在，除非你忘了初始化音频系统
         ma_sound_group* soundGroup = GlobalSystemUtils::getSoundGroupInstance(soundType);
+        QString finalPath = Path::finalModPath(filePath);
 
         if (bLoadToRAM) {
             flag |= MA_SOUND_FLAG_DECODE;

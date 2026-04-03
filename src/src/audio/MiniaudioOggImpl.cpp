@@ -7,4 +7,15 @@
 #undef STB_VORBIS_HEADER_ONLY
 #include "src/thirdParty/stbvorbis/stb_vorbis.c"
 
-#undef STB_VORBIS_HEADER_ONLY
+// 防止出现各种奇怪的宏替换导致的问题
+#ifdef C
+#undef C
+#endif
+
+#ifdef R
+#undef R
+#endif
+
+#ifdef L
+#undef L
+#endif

@@ -2,9 +2,9 @@
 // Created by 44224 on 3/28/2026.
 //
 
-#include <src/include/audio/FunkinSoundSystem.h>
-#include "src/include/utils/GlobalSystemUtils.h"
-#include "src/include/audio/FunkinSound.h"
+#include <audio/FunkinSoundSystem.h>
+#include "utils/GlobalSystemUtils.h"
+#include "audio/FunkinSound.h"
 
 FunkinSoundSystem::FunkinSoundSystem() {
     // 一定要先把SaveSystem new出来，再调用这个！！！！！否则崩溃
@@ -18,9 +18,13 @@ FunkinSoundSystem::FunkinSoundSystem() {
     ma_sound_group_init(&engine,0,nullptr,&uiSoundGroup);
     ma_sound_group_init(&engine,0,nullptr,&vocalSoundGroup);
     ma_sound_group_init(&engine,0,nullptr,&instSoundGroup);
+}
 
+void FunkinSoundSystem::initBuildInSounds() {
     // 再初始化默认音效
-    confirmSound = new FunkinSound(true,);
+    this->backSound = new FunkinSound(true,Path::cancelSoundPath,ESoundType::uiSound,"取消音效");
+    this->scrollSound = new FunkinSound(true,Path::scrollSoundPath,ESoundType::uiSound,"滚动音效");
+    this->confirmSound = new FunkinSound(true,Path::confirmSoundPath,ESoundType::uiSound,"确认音效");
 }
 
 void FunkinSoundSystem::setSoundVolume(float newVolume, ESoundType soundType) {
@@ -32,6 +36,20 @@ void FunkinSoundSystem::setSoundVolume(float newVolume, ESoundType soundType) {
     }
     if (targetModifySoundGroup)
         ma_sound_group_set_volume(targetModifySoundGroup, newVolume);
+}
+
+void FunkinSoundSystem::playBuildInSound(EDefaultSoundType soundType) {
+    switch (soundType) {
+        case EDefaultSoundType::back: {
+            backSound->playSound();
+        }
+        case EDefaultSoundType::confirm: {
+            confirmSound->playSound();
+        }
+        case EDefaultSoundType::scroll: {
+            scrollSound->playSound();
+        }
+    }
 }
 
 

@@ -3,7 +3,7 @@
 #include <QQmlApplicationEngine>
 #include <QQmlContext> // 用于把 C++ 对象传给 QML
 #include <iostream>
-#include "QObject.h"
+#include <QObject>
 
 class FButton : public QObject
 {

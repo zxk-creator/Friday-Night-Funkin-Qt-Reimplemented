@@ -1,46 +1,61 @@
 # Friday Night Funkin Qt Reimplemented
 
-## 简介：
-欢迎
-嗯，这是一个基于Qt做的从零开始复刻FNF的项目，也是我的第一个开源项目，使用C++ 开发。
-主要目的是为了学习C++和Qt，并不保证能玩。
-兴趣驱动学习，所以就有了这个项目。
-原本使用UE5开发，最后战略转型。
-代码写的有点水。
+[中文文档](ZHREADME.md) | [**English Version**](README.md)
 
-### 🛠 实现路线：
-- [x] 手搓模组解析并构建选择模组界面
-- [ ] 手搓基础游戏界面
-- [ ] 手搓json/xml/png解析模块
-- [ ] 手搓解析模组文件并开始可玩
-- [ ] 手搓兼容脚本
-- [ ] 复刻成功
+## 📌 Introduction
+- A Friday Night Funkin' (FNF) reimplementation built from scratch using **Qt** and **C++**.
+- This is my first open-source project, primarily created for learning C++ and the Qt framework. **Playability is not guaranteed.**
+- Driven by pure interest—the project exists because I wanted to see if I could do it.
+- **Strategic Pivot:** Originally started in UE5, now migrated to Qt for a more lightweight architecture.
+- **Engine Name:** Quark Engine.
+- Built from the ground up without relying on any existing FNF engines. Pure "hand-crafted" logic.
+- *Note: The code might be a bit messy (still learning!!!).*
 
-业余时间开发，前前后后预计需要一到两年的时间。
+## 🛠 Roadmap
+- [x] Implement custom mod parsing & mod selection UI
+- [ ] Build basic game interface
+- [ ] Develop custom JSON / XML / PNG parsing modules
+- [ ] Implement mod asset loading and core gameplay logic
+- [ ] Develop script compatibility layer
+- [ ] Full reimplementation complete
 
-### ✅ 如何构建：
-克隆本项目后随便拷贝到磁盘的某个位置用VS打开这个目录就行。
+*This is a hobby project. Estimated development time: 1–2 years.*
 
-### 🚀 开发环境
-* **IDE**: Visual Studio 2022 / Qt Creator
-* **框架**: Qt 6.x
-* **构建系统**: CMake / qmake
+## ✅ How to Build
+Clone the repository to your local drive and open the directory with **Visual Studio** or **CLion**. It should be ready to configure and build.
 
-### 🤝 贡献者：
-**Laokun**
+It's recommended to use **Linux** to develop this project.
 
-### 📁 项目结构
-比较随性
+## 🚀 Development Environment
+<img src="./DocumentImages/Clion.png" width="60" alt="CLion">
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<img src="./DocumentImages/Visual%20Studio.png" width="60" alt="VS">
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<img src="./DocumentImages/C++.png" width="60" alt="Cpp">
 
-## 📄 许可证
-说实话要这个干什么呢
+* **IDE**: Visual Studio 2022 / Qt Creator / **CLion (Recommended)**
+* **Language**: C++17
+* **Framework**: Qt 6.9.2
+* **Build System**: CMake / qmake
 
-## 📸 截图
-无
+*PS: VS Code works too, but configuration can be a headache. Best for those who enjoy troubleshooting.*
 
-## 💬 联系作者
-https://space.bilibili.com/533393738?spm_id_from=333.1007.0.0
+## 🤝 Contributors
+- **LaoKun(myself)**
 
-## 📜 鸣谢
-* [Friday Night Funkin'](https://github.com/ninjamuffin99/Funkin) - 感谢原作者团队带来的伟大作品。
-* 以及所有开源社区提供的技术灵感。
+## 📁 Project Structure
+Following a structure similar to the original FNF (Official Engine).
+
+## 📄 License
+To be honest, I haven't decided if I need one yet.
+
+## 📸 Screenshots
+I guess I have one. But it's Hello World. Do you want to see?
+
+## 💬 Contact Author
+- [Youtube - LaoKun](https://www.youtube.com/@LaoKunStudio)
+- zxkverygood@gmail.com
+
+## 📜 Credits
+* [Friday Night Funkin'](https://github.com/ninjamuffin99/Funkin) - Huge thanks to the original team for this amazing game.
+* Thanks to the entire open-source community for the technical inspiration.

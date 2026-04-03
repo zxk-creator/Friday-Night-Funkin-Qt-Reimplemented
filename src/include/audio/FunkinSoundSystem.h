@@ -1,13 +1,7 @@
 // 为了使用stb_vorbis的ogg解码播放功能
 #pragma once
-#define STB_VORBIS_HEADER_ONLY
-#include "src/thirdParty/stbvorbis/stb_vorbis.c" 
-#define MINIAUDIO_IMPLEMENTATION
-#include "src/thirdParty/miniaudio/miniaudio.h"
-#undef STB_VORBIS_HEADER_ONLY
-#include "src/thirdParty/stbvorbis/stb_vorbis.c"
-
 #include "SoundEnum.h"
+#include "miniaudio/miniaudio.h"
 
 // 前向声明防止循环依赖
 class FunkinSound;
@@ -25,6 +19,8 @@ private:
 	FunkinSound* confirmSound = nullptr;
 	FunkinSound* backSound = nullptr;
 	FunkinSound* scrollSound = nullptr;
+	// 主菜单音效
+	FunkinSound* titleTheme = nullptr;
 
 	// 常用音频组，方便后期设置调音量
 	ma_sound_group uiSoundGroup;
@@ -41,8 +37,9 @@ public:
 protected:
 	~FunkinSoundSystem() = default;
 
-private:
 	// 我相信你无法调用这个函数，只能通过我的工具类，而工具类已经Clamp过newVolume音量到一个合法的值了，所以我就不Clamp了
 	void setSoundVolume(float newVolume,ESoundType soundType);
-
+public:
+	void playBuildInSound(EDefaultSoundType soundType);
+	void initBuildInSounds();
 };
