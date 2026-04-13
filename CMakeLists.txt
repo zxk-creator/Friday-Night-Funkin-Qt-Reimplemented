@@ -32,6 +32,7 @@ set(PROJECT_SOURCES
         src/src/audio/MiniaudioOggImpl.cpp
         src/src/utils/Path.cpp
         src/include/gameloop/GameLoop.h
+        src/include/qmlReloader/QmlReloader.h
 )
 
 set(CMAKE_AUTORCC ON)
@@ -52,7 +53,10 @@ if(QT_VERSION VERSION_GREATER_EQUAL 6.2)
         RESOURCE_PREFIX "/qt/qml/"
         QML_FILES
             QML/main.qml
-            QML/fonts/MainFont.qml
+            QML/fonts/Mainfont.qml
+            QML/views/modding/Modlist.qml
+            QML/views/modding/ModItem.qml
+            QML/buttons/DefaultButton.qml
         RESOURCES
             BF.ico
     )

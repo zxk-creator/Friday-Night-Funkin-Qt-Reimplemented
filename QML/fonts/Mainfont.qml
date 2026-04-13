@@ -1,4 +1,4 @@
-// MainFont.qml
+// Mainfont.qml
 import QtQuick
 
 Item {

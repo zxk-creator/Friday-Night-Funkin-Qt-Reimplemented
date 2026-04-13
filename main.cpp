@@ -2,6 +2,7 @@
 #include <QQmlApplicationEngine>
 #include <qicon.h>
 #include <QQmlContext>
+#include <qmlReloader/QmlReloader.h>
 #include <gameloop/GameLoop.h>
 #include <audio/FunkinSound.h>
 #include <utils/InstanceLibrary.h>
@@ -21,6 +22,7 @@ int main(int argc, char *argv[])
     GameLoop gameLoop;
     // 加载qml
     QQmlApplicationEngine engine;
+
     engine.rootContext()->setContextProperty("gameLoop", &gameLoop);
     engine.load(QUrl(QStringLiteral("qrc:/qt/qml/friday_night_funkin/QML/main.qml")));
     if (engine.rootObjects().isEmpty())
