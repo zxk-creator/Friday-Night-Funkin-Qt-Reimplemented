@@ -6,7 +6,7 @@
 #include "utils/GlobalSystemUtils.h"
 #include "audio/FunkinSound.h"
 
-FunkinSoundSystem::FunkinSoundSystem() {
+FunkinSoundSystem::FunkinSoundSystem(QObject *parent) : QObject(parent) {
     // 一定要先把SaveSystem new出来，再调用这个！！！！！否则崩溃
     uiSoundVolume = GlobalSystemUtils::getSoundVolume(ESoundType::uiSound);
     vocalSoundVolume = GlobalSystemUtils::getSoundVolume(ESoundType::vocal);
@@ -22,9 +22,10 @@ FunkinSoundSystem::FunkinSoundSystem() {
 
 void FunkinSoundSystem::initBuildInSounds() {
     // 再初始化默认音效
-    this->backSound = new FunkinSound(true,Path::cancelSoundPath,ESoundType::uiSound,"取消音效");
-    this->scrollSound = new FunkinSound(true,Path::scrollSoundPath,ESoundType::uiSound,"滚动音效");
-    this->confirmSound = new FunkinSound(true,Path::confirmSoundPath,ESoundType::uiSound,"确认音效");
+    this->backSound = new FunkinSound(true,Path::cancelSoundPath,ESoundType::uiSound,false,"取消音效");
+    this->scrollSound = new FunkinSound(true,Path::scrollSoundPath,ESoundType::uiSound,false,"滚动音效");
+    this->confirmSound = new FunkinSound(true,Path::confirmSoundPath,ESoundType::uiSound,false,"确认音效");
+    this->infoSound = new FunkinSound(true,Path::infoSoundPath,ESoundType::uiSound,false,"提示音音效");
 }
 
 void FunkinSoundSystem::setSoundVolume(float newVolume, ESoundType soundType) {
@@ -50,6 +51,26 @@ void FunkinSoundSystem::playBuildInSound(EDefaultSoundType soundType) {
             scrollSound->playSound();
         }
     }
+}
+
+void FunkinSoundSystem::playconfirmSound()
+{
+    confirmSound->playSound();
+}
+
+void FunkinSoundSystem::playbackSound()
+{
+    backSound->playSound();
+}
+
+void FunkinSoundSystem::playscrollSound()
+{
+    scrollSound->playSound();
+}
+
+void FunkinSoundSystem::playinfoSound()
+{
+    infoSound->playSound();
 }
 
 

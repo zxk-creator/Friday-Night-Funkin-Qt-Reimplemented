@@ -26,7 +26,7 @@ public:
      * @param soundType 声音类型
      * @param soundName 给这个声音取得名字
      */
-    FunkinSound(bool bLoadToRAM,const QString filePath,ESoundType soundType,const QString soundName = "") {
+    FunkinSound(bool bLoadToRAM,const QString filePath,ESoundType soundType,bool whetherLoop,const QString soundName = "") {
 
         ma_uint32 flag = 0;
         // 指针，共享同一份实例。一定存在，除非你忘了初始化音频系统
@@ -43,6 +43,11 @@ public:
             qCritical() << "声音初始化失败，名称" << thisSoundName << "。原因：" << result;
             return;
         }
+        if (whetherLoop)
+        {
+            ma_sound_set_looping(&thisSound,true);
+            qInfo() << thisSoundName << "被设置为重复音效。";
+        }
         bIsInitialized = true;
     }
     // 禁止拷贝构造
@@ -54,6 +59,8 @@ public:
         if (!bIsInitialized) {
             qCritical() << "声音播放失败，名称" << thisSoundName << "。原因：未初始化音频！";
         }
+        // 无论如何，开始播放直接从头开始播放
+        ma_sound_seek_to_pcm_frame(&thisSound, 0);
         ma_result result = ma_sound_start(&thisSound);
         if (result != MA_SUCCESS) {
             qCritical() << "声音播放失败，名称" << thisSoundName << "。原因：" << result;

@@ -18,6 +18,7 @@ public:
 	static inline FunkinPath scrollSoundPath = ":/mods/default/sounds/scrollMenu.ogg";
 	static inline FunkinPath cancelSoundPath = ":/mods/default/sounds/cancelMenu.ogg";
 	static inline FunkinPath titleThemePath = ":/mods/default/sounds/titleTheme.ogg";
+	static inline FunkinPath infoSoundPath = ":/mods/default/sounds/boop.wav";
 
 	static FunkinPath getDefaultSoundPath(EDefaultSoundType soundType);
 
@@ -35,10 +36,15 @@ public:
 	static QString getModDir();
 
 	/**
-	 * @brief 用于转换qrc文件路径以及相对路径到到绝对路径
+	 * @brief 用于将qrc路径以及相对路径到到绝对路径
 	 * @param filePath 绝对路径，相对路径
 	 * @return 真 绝对路径。
 	 */
 	static QString finalModPath(const QString& filePath);
+
+	/**
+	 * @brief 获取mods目录下的所有子目录路径并返回一个数组
+	**/
+	static QVector<QString> getAllModFolderPaths();
 };
 
