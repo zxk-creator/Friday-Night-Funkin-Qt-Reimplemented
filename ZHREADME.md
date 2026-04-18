@@ -22,19 +22,20 @@
 *业余时间开发，前前后后预计需要一到两年的时间。*
 
 ## ✅ 如何构建：
-克隆本项目后随便拷贝到磁盘的某个位置用VS或者CLion打开项目下的CMakeList.txt即可，建议使用Linux。
+克隆本项目后随便拷贝到磁盘的某个位置用VS或者CLion打开项目下的CMakeList.txt即可。需要先根据Qt文档下载依赖库搭建开发环境。
 
 ## 🚀 开发环境
-<img src="./DocumentImages/Clion.png" width="60" alt="CLion">
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-<img src="./DocumentImages/Visual%20Studio.png" width="60" alt="CLion">
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-<img src="./DocumentImages/C++.png" width="60" alt="Cpp">
+<img src="./DocumentImages/Clion.png" width="50" alt="CLion">
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<img src="./DocumentImages/Visual%20Studio.png" width="50" alt="CLion">
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<img src="./DocumentImages/C++.png" width="50" alt="Cpp">
 
 * **IDE**: Visual Studio 2022 / Qt Creator / CLion（推荐）
 * **语言**: C++17
 * **框架**: Qt 6.9.2
 * **构建系统**: CMake / qmake
+* **操作系统**: 建议使用Linux
 
 *PS:VSCode也行，但是配置麻烦。适合喜欢折腾的玩家*
 
@@ -45,7 +46,7 @@
 类似原版FNF（官方引擎）
 
 ## 📄 许可证
-别拿去卖钱就行
+Qt的
 
 ## 📸 截图
 想看Hello World吗

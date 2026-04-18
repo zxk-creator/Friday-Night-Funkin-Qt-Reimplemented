@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Layouts
 import "../fonts"
+import "../views/info"
 
 Item {
     id: root
@@ -9,11 +10,15 @@ Item {
     property color normalColor: "#9E000000"   // 默认半透黑
     property color hoverColor: "#8E8E8EDD"    // 默认悬停灰
     property color pressColor: "#B0FFFFDD"    // 默认点击白
+    property bool showHoverMsg: false;
+    property bool showPressMsg: false;
+    property string hoverMsg: ""
+    property string pressMsg: ""
     signal clicked() // 定义点击信号
 
     // 没设置width时生效
     Layout.fillWidth: true
-    Layout.preferredHeight: 60
+    Layout.preferredHeight: gameCanvas.dp(60)
 
     Rectangle {
         id: bg
@@ -37,7 +42,21 @@ Item {
             id: ma
             anchors.fill: parent
             hoverEnabled: true
-            onClicked: root.clicked() // 触发根部的信号
+            onClicked: {
+                SoundSystem.playconfirmSound()
+                if (showPressMsg)
+                {
+                    globalHintMsg.showNotification(pressMsg);
+                }
+                root.clicked()
+            } // 触发根部的信号
+            onEntered: {
+                SoundSystem.playscrollSound()
+            if (showHoverMsg)
+            {
+                globalHintMsg.showNotification(hoverMsg);
+            }
+            }
         }
     }
 }

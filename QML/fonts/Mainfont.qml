@@ -25,9 +25,19 @@ Item {
         // 填满外层 Item
         anchors.fill: parent
 
+        // 支持html风语法！
+        textFormat: Text.StyledText
+
+        onLinkActivated: (link) => {
+            console.log("Opening link:", link)
+            Qt.openUrlExternally(link)
+        }
+
+        wrapMode: Text.Wrap
+
         // 默认设置
         font.family: customFont.name
-        font.pixelSize: 30
+        font.pixelSize: gameCanvas.dp(30)
         color: "#ffffff"
         renderType: Text.NativeRendering
 

@@ -6,7 +6,7 @@
 
 #include <qcoreapplication.h>
 #include <qstandardpaths.h>
-
+#include <QDirIterator>
 #include "src/include/ui/buttons/FButton.h"
 
 FunkinPath Path::getDefaultSoundPath(EDefaultSoundType soundType) {
@@ -44,7 +44,7 @@ void Path::checkWhetherModDirExists() {
 
 #ifdef Q_OS_ANDROID
     // Android: /storage/emulated/0/FNFMods
-    baseDir = QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation) + "/FNFMods";
+    baseDir = "/sdcard/FNFMods";
 #else
     // Windows: exe所在目录/mods
     baseDir = QDir(QCoreApplication::applicationDirPath()).filePath("mods");
@@ -66,9 +66,11 @@ void Path::checkWhetherModDirExists() {
 
 QString Path::getModDir() {
     QString baseDir;
+    // 安卓系统上，模组目录位于/stroage/emuilated/0/FNFMods
 #ifdef Q_OS_ANDROID
-    baseDir = QStandardPaths::QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation) + "/FNFMods";
+    baseDir = "/sdcard/FNFMods";
 #else
+    // 其余的在可执行文件所在目录，名为mods
     baseDir = QCoreApplication::applicationDirPath() + "/mods";
 #endif
     QDir finalDir(baseDir);
@@ -131,4 +133,19 @@ QString Path::finalModPath(const QString &filePath) {
 
     qInfo() << "最终绝对路径：" << finalPath;
     return finalPath;
+}
+
+QVector<QString> Path::getAllModFolderPaths()
+{
+    QString baseDir = getModDir();
+    QVector<QString> res;
+    // 过滤掉父目录本身和，递归搜索所有子目录
+    QDirIterator it(baseDir,QDir::Dirs | QDir::NoDotAndDotDot,QDirIterator::NoIteratorFlags);
+    while (it.hasNext())
+    {
+        // 返回的就算绝对路径
+        res.append(it.next());
+    }
+
+    return res;
 }

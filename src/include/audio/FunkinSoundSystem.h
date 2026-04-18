@@ -1,13 +1,18 @@
-// 为了使用stb_vorbis的ogg解码播放功能
 #pragma once
 #include "SoundEnum.h"
+#include <QObject>
 #include "miniaudio/miniaudio.h"
 
 // 前向声明防止循环依赖
 class FunkinSound;
 
-class FunkinSoundSystem
+class FunkinSoundSystem : public QObject
 {
+	Q_OBJECT
+
+public:
+	explicit FunkinSoundSystem(QObject *parent = nullptr);
+
 	// 必须先初始化Save，再初始化子系统，否则崩溃！！！！！
 private:
 	float uiSoundVolume = 1;
@@ -21,6 +26,8 @@ private:
 	FunkinSound* scrollSound = nullptr;
 	// 主菜单音效
 	FunkinSound* titleTheme = nullptr;
+	// 提示信息框音效
+	FunkinSound* infoSound = nullptr;
 
 	// 常用音频组，方便后期设置调音量
 	ma_sound_group uiSoundGroup;
@@ -30,9 +37,6 @@ private:
 	// 核心声音引擎
 	ma_engine engine;
 
-public:
-	FunkinSoundSystem();
-
 	// 禁止删除，关游戏自动删除，删了就崩溃
 protected:
 	~FunkinSoundSystem() = default;
@@ -41,5 +45,11 @@ protected:
 	void setSoundVolume(float newVolume,ESoundType soundType);
 public:
 	void playBuildInSound(EDefaultSoundType soundType);
+	// 这些是给QML直接调用用的
+	Q_INVOKABLE void playconfirmSound();
+	Q_INVOKABLE void playbackSound();
+	Q_INVOKABLE void playscrollSound();
+	Q_INVOKABLE void playinfoSound();
+
 	void initBuildInSounds();
 };

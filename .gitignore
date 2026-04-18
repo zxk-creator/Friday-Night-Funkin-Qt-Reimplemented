@@ -375,3 +375,10 @@ FodyWeavers.xsd
 /dataSources.local.xml
 .idea/
 cmake-build-*/
+build/
+out/
+.gradle/
+.externalNativeBuild/
+.cxx/
+
+!.*

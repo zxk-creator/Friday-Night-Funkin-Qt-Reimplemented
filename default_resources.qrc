@@ -84,6 +84,7 @@
         <file>mods/default/shared/images/ui/countdown/funkin/go.png</file>
         <file>mods/default/shared/images/ui/countdown/funkin/ready.png</file>
         <file>mods/default/shared/images/ui/countdown/funkin/set.png</file>
+        <file>mods/default/sounds/boop.wav</file>
         <file>mods/default/shared/music/breakfast/breakfast.ogg</file>
         <file>mods/default/shared/music/gameplay/gameover/gameOver.ogg</file>
         <file>mods/default/shared/music/gameplay/gameover/gameOverEnd.ogg</file>
