@@ -3,34 +3,39 @@
 //
 
 #pragma once
-#include <QDir>
 #include <modding/modmetadata/ModMetadata.h>
 
 using std::nullopt;
 
-/**
- * @brief 虽然说只想兼容PE和VS，但是万一做了呢？所以暂时保留接口！
-*/
-enum class ModEngineType
+class ModScanUtils
 {
-    // Psych Engine
-    PE,
-    // V-Slice
-    VS,
-    // Kade Engine
-    KE,
-    // Codename Engine
-    CNE,
-    // 反正肯定不是V-Slice
-    Unknown,
-};
+public:
+    static ModEngineType judgeModEngine(const QString& modAbsolutePath);
+    static optional<ModMetadata> scanPEModMetadata(QString& modAbsolutePath);
+    static optional<ModMetadata> scanVSModMetadata(QString& modAbsolutePath);
+    /** TODO:先扔这儿了 **/
+    static optional<ModMetadata> scanKEModMetadata(QString& modAbsolutePath) { return nullopt;}
+    static optional<ModMetadata> scanCNEModMetadata(QString& modAbsolutePath) { return nullopt;}
 
-namespace ModScanUtils
-{
-    ModEngineType judgeModEngine(const QString& modAbsolutePath);
-    optional<ModMetadata> scanPEMod(QString& modAbsolutePath);
-    optional<ModMetadata> scanVSMod(QString& modAbsolutePath);
-    /** TODO:先扔这儿了，想做了就做了 **/
-    inline optional<ModMetadata> scanKEMod(QString& modAbsolutePath) { return nullopt;}
-    inline optional<ModMetadata> scanCNEMod(QString& modAbsolutePath) { return nullopt;}
-}
+    /**
+     *  真正扫描一个模组文件夹里面的东西！您只需要调用这个即可
+     *  @param modAbsolutePath: 传入模组的绝对路径
+     *  没有返回值，自动注册到注册表中，开始玩了才会加载
+     */
+    void scanAllMods(QString& modAbsolutePath);
+
+private:
+    /**
+     * 我认为函数不应该返回任何值导致相互依赖，应该每个函数都到对应的位置自取
+     * 我们这里采用懒加载模式，解析后的数据只是一堆路径字符串，并非真的加载到内存中
+     * PE和V-Slice都适用！判断逻辑写到这里面了
+     * @return 模组解析是否成功。
+     * TODO: CNE在HScript解释器写出来之前，估计这里是不会给他适配了
+     */
+    bool parseWeeks(QString& modAbsolutePath);
+    bool parseCharacters(QString& modAbsolutePath);
+    bool parseSongs(QString& modAbsolutePath);
+    bool parseStages(QString& modAbsolutePath);
+    bool parseNotestyles(QString& modAbsolutePath);
+    // TODO:dialogue，ui（官方引擎freeplay里面的），stickerpack（官方引擎）暂时用不到，所以不写了！
+};

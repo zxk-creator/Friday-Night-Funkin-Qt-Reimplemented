@@ -24,6 +24,7 @@ public:
     {
         NameRole = Qt::UserRole + 1,
         IconRole,
+        PathRole,
         DetailRole,
     };
 
@@ -63,11 +64,11 @@ public:
 
         const ModMetadata &mod = m_mods[index.row()];
         // 把一些常用属性给拼接成字符串方便显示！
-
         if (role == NameRole && mod.title.has_value()) return QString::fromStdString(mod.title.value());
         if (role == IconRole && mod.iconPath.has_value()) return QString::fromStdString(mod.iconPath.value());
         // 直接返回完整字符串让qml显示！
         if (role == DetailRole) return mod.getDetailString();
+        if (role == PathRole) return QString::fromStdString(mod.modPath.value());
 
         return {};
     }
@@ -77,14 +78,23 @@ public:
         QHash<int, QByteArray> roles;
         roles[NameRole] = "title";
         roles[IconRole] = "icon";
+        roles[PathRole] = "path";
         roles[DetailRole] = "detail";
         return roles;
     }
 
+    QVector<ModMetadata> getAllModMetadata()
+    {
+        return m_mods;
+    }
+
     signals:
     void countChanged();
-
+    
 private:
-    // 这里面有几个元素，就会渲染几个ModItem到qml ListView界面上
+    /**
+     * 这里面有几个元素，就会渲染几个ModItem到qml ListView界面上
+     * 表示的是目录下一共有几个模组。
+    */
     QVector<ModMetadata> m_mods;
 };

@@ -4,6 +4,9 @@
 #include "utils/modding/ModScanUtils.h"
 #include "../thirdParty/nlohmann/json.hpp"
 #include "utils/InstanceLibrary.h"
+#include "utils/exception/CustomException.h"
+#include "data/level/LevelData.h"
+#include "src/src/utils/file/FileUtil.h"
 
 using Lang = InstanceLibrary;
 
@@ -31,9 +34,12 @@ ModEngineType ModScanUtils::judgeModEngine(const QString& modAbsolutePath)
 
 // 真正意义上解析模组！
 // TODO: Linux上大小写敏感，icon.png和icon.PNG完全是两个东西。等出问题了再修吧:)
-optional<ModMetadata> ModScanUtils::scanPEMod(QString& modAbsolutePath)
+optional<ModMetadata> ModScanUtils::scanPEModMetadata(QString& modAbsolutePath)
 {
     ModMetadata modMetadata{};
+    modMetadata.modPath = modAbsolutePath.toStdString();
+    modMetadata.engineType = ModEngineType::PE;
+
     QDir modDir(modAbsolutePath);
     QString cfgPath = modDir.filePath("pack.json");
     if (!QFile::exists(cfgPath))
@@ -82,9 +88,12 @@ optional<ModMetadata> ModScanUtils::scanPEMod(QString& modAbsolutePath)
 }
 
 // TODO: Linux上大小写敏感，icon.png和icon.PNG完全是两个东西。等出问题了再修吧:)
-optional<ModMetadata> ModScanUtils::scanVSMod(QString& modAbsolutePath)
+optional<ModMetadata> ModScanUtils::scanVSModMetadata(QString& modAbsolutePath)
 {
     ModMetadata modMetadata{};
+    modMetadata.modPath = modAbsolutePath.toStdString();
+    modMetadata.engineType = ModEngineType::VS;
+
     QDir modDir(modAbsolutePath);
     QString cfgPath = modDir.filePath("_polymod_meta.json");
     QString iconPath = modDir.filePath("_polymod_icon.png");
@@ -131,21 +140,21 @@ optional<ModMetadata> ModScanUtils::scanVSMod(QString& modAbsolutePath)
         // 处理dependencies和optionalDependencies
         if (j.contains("optionalDependencies") && j["optionalDependencies"].is_object())
         {
-            QMap<std::string, VersionRules> dependencyMap;
+            QMap<std::string, string> dependencyMap;
             auto deps = j["optionalDependencies"];
             for (auto it = deps.begin();it != deps.end();++it)
             {
-                dependencyMap.insert(it.key(), VersionRules(it.value().get<string>()));
+                dependencyMap.insert(it.key(), it.value().get<string>());
             }
             modMetadata.optionalDependencies = dependencyMap;
         }
         if (j.contains("dependencies") && j["dependencies"].is_object())
         {
-            QMap<std::string, VersionRules> dependencyMap;
+            QMap<std::string, string> dependencyMap;
             auto deps = j["dependencies"];
             for (auto it = deps.begin();it != deps.end();++it)
             {
-                dependencyMap.insert(it.key(), VersionRules(it.value().get<string>()));
+                dependencyMap.insert(it.key(), it.value().get<string>());
             }
             modMetadata.dependencies = dependencyMap;
         }
@@ -197,4 +206,63 @@ optional<ModMetadata> ModScanUtils::scanVSMod(QString& modAbsolutePath)
         qCritical() << "解析json时发生异常：" << e.what();
         return nullopt;
     }
+}
+
+void ModScanUtils::scanAllMods(QString& modAbsolutePath)
+{
+    // 按顺序来，不能错！
+    if (parseWeeks(modAbsolutePath))
+        qWarning() << "解析 " << modAbsolutePath << "的levels的时候出现问题\n已跳过";
+
+    parseSongs(modAbsolutePath);
+    parseCharacters(modAbsolutePath);
+    parseStages(modAbsolutePath);
+}
+
+bool ModScanUtils::parseWeeks(QString& modAbsolutePath)
+{
+    QString finalLevelDirPath = modAbsolutePath + QDir::separator() + "data" + QDir::separator() + "levels";
+    QDir levelDir = finalLevelDirPath;
+    if (!levelDir.exists())
+    {
+        Exception::logParseModException(ModParseExcpetionType::NoFileOrDir,modAbsolutePath);
+        return false;
+    }
+    
+    QStringList filter;
+    filter << "*.json";
+    levelDir.setNameFilters(filter);
+
+    QStringList jsonFiles = levelDir.entryList(QDir::Files);
+
+    foreach(const QString& fileName, jsonFiles)
+    {
+        QString oneJSONFile = finalLevelDirPath + QDir::separator() + fileName;
+        // 直接开始解析json
+        QString content = FileUtil::ReadFileToString(oneJSONFile);
+
+        // 由于我们已经写好了from_json函数，因此可以直接获取！
+        json j = nlohmann::json::parse(content.toStdString());
+        LevelData levelData = j.get<LevelData>();
+    }
+}
+
+bool ModScanUtils::parseCharacters(QString& modAbsolutePath)
+{
+
+}
+
+bool ModScanUtils::parseSongs(QString& modAbsolutePath)
+{
+
+}
+
+bool ModScanUtils::parseStages(QString& modAbsolutePath)
+{
+
+}
+
+bool ModScanUtils::parseNotestyles(QString& modAbsolutePath)
+{
+
 }

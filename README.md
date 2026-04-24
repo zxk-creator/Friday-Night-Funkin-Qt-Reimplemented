@@ -37,6 +37,7 @@ It's recommended to use **Linux** to develop this project.
 * **Language**: C++17
 * **Framework**: Qt 6.9.2
 * **Build System**: CMake / qmake
+* **OS**: Linux(Recommended)
 
 *PS: VS Code works too, but configuration can be a headache. Best for those who enjoy troubleshooting.*
 
@@ -44,7 +45,16 @@ It's recommended to use **Linux** to develop this project.
 - **LaoKun(myself)**
 
 ## 📁 Project Structure
-Following a structure similar to the original FNF (Official Engine).
+Mirroring the original FNF (Official Engine) layout
+* QML: Interface description files.
+* src: Source code directory.
+* src/include: Header files (includes some inline implementations).
+* src/src: .cpp source files.
+* docker: One-click build environment (Work in Progress).
+* android: Java source code and manifest files for Android APK builds.
+* mod: Core game art assets sourced from the official engine (does not include all playable weeks).
+* main.cpp: The main entry point of the program. Start your reference here.
+* rc: Windows icon and resource files.
 
 ## 📄 License
 To be honest, I haven't decided if I need one yet.

@@ -20,6 +20,7 @@ Rectangle {
     readonly property string mtitle: model.title
     readonly property string micon: model.icon
     readonly property string mdetail: model.detail
+    readonly property string mpath: model.path
 
     // 判断模组选择框颜色的函数
     function determineColor() {

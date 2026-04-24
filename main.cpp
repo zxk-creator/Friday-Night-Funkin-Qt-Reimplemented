@@ -1,8 +1,6 @@
 #include <qicon.h>
 #include <QQmlContext>
-#include <QQmlApplicationEngine>
 #include <QGuiApplication>
-#include <gameloop/GameLoop.h>
 #include <audio/FunkinSound.h>
 #include <utils/InstanceLibrary.h>
 
@@ -11,7 +9,7 @@
 #endif
 
 // 暴露C++函数给QML调用
-void initQmlEngine(QQmlApplicationEngine &engine)
+inline void initQmlEngine(QQmlApplicationEngine &engine)
 {
     engine.rootContext()->setContextProperty("SoundSystem",InstanceLibrary::funkinSoundSystem);
     engine.rootContext()->setContextProperty("ModManager",InstanceLibrary::modManager);

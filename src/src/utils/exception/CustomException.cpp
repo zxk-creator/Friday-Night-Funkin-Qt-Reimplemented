@@ -1,0 +1,60 @@
+//
+// Created by kkplay on 4/23/26.
+//
+
+#include "utils/exception/CustomException.h"
+
+
+void Exception::logParseJSONException(const string& message, const string& functionName, const string& fileName, int atLine)
+{
+    // 暂时不弹窗
+    string resStr = "\nJSON解析错误！\n" + message + "\n发生在函数 " + functionName + " 行 " + std::to_string(atLine) + "\nJSON文件名：" + fileName + "\n";
+    qCritical() << QString::fromStdString(resStr);
+
+    // TODO: 也许我们可以在这里加一些弹窗逻辑告知用户？
+}
+
+void Exception::logParseJSONException(const QString& message, const QString& functionName,const  QString& fileName, int atLine)
+{
+    // 暂时不弹窗
+    QString resStr = "\nJSON解析错误！\n" + message + "\n发生在函数 " + functionName + " 行 " + QString::number(atLine) + "\nJSON文件名：" + fileName + "\n";
+    qCritical() << resStr;
+
+    // TODO: 也许我们可以在这里加一些弹窗逻辑告知用户？
+}
+
+void Exception::logNullPointerException(const string& message,const string& functionName, int atLine)
+{
+    string resStr = "\n发生空指针异常！\n" + message + "\n发生在函数" + functionName + "行" + std::to_string(atLine);
+    qCritical() << QString::fromStdString(resStr);
+}
+
+void Exception::logParseModException(ModParseExcpetionType excpetionType, const QString& file)
+{
+    QString message;
+    switch (excpetionType)
+    {
+    case ModParseExcpetionType::NoFileOrDir:
+        {
+            message = "模组解析失败: 没有这样的文件或文件夹" + file;
+            break;
+        }
+    case ModParseExcpetionType::BadJSONGrammer:
+        {
+            message = "模组解析失败: JSON语法错误" + file;
+            break;
+        }
+    case ModParseExcpetionType::OpenFileFail:
+        {
+            message = "文件打开失败：" + file;
+            break;
+        }
+        default:
+        {
+            message = "模组解析失败: 未知错误" + file;
+            break;
+        }
+    }
+
+    qCritical() << message;
+}

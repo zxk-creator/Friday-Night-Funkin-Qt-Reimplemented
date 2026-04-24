@@ -42,7 +42,7 @@ QString ModMetadata::getExtraInfoString() const
         extraInfoStr += "<br/>" + pool->modOptionalDependencies();
         for (auto [name,rule] : dependencies.value().asKeyValueRange())
         {
-            extraInfoStr += QString::fromStdString(name) + "  " + pool->version() + QString::fromStdString(rule.version) + "<br/>";
+            extraInfoStr += QString::fromStdString(name) + "  " + pool->version() + QString::fromStdString(rule) + "<br/>";
         }
     }
     if (optionalDependencies.has_value())
@@ -50,7 +50,7 @@ QString ModMetadata::getExtraInfoString() const
         extraInfoStr += "<br/>" + pool->modOptionalDependencies();
         for (auto [name,rule] : optionalDependencies.value().asKeyValueRange())
         {
-            extraInfoStr += QString::fromStdString(name) + "  " + pool->version() + QString::fromStdString(rule.version) + "<br/>";
+            extraInfoStr += QString::fromStdString(name) + "  " + pool->version() + QString::fromStdString(rule) + "<br/>";
         }
     }
 

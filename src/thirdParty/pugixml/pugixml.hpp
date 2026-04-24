@@ -675,7 +675,7 @@ namespace pugi
 		bool remove_children();
 
 		// Parses buffer as an XML document fragment and appends all nodes as children of the current node.
-		// Copies/converts the buffer, so it may be deleted or changed after the function returns.
+		// Copies/converts the buffer, so it may be deleted or changed after the sectionLoader returns.
 		// Note: append_buffer allocates memory that has the lifetime of the owning document; removing the appended nodes does not immediately reclaim that memory.
 		xml_parse_result append_buffer(const void* contents, size_t size, unsigned int options = parse_default, xml_encoding encoding = encoding_auto);
 
@@ -1155,7 +1155,7 @@ namespace pugi
 		xml_parse_result load_file(const char* path, unsigned int options = parse_default, xml_encoding encoding = encoding_auto);
 		xml_parse_result load_file(const wchar_t* path, unsigned int options = parse_default, xml_encoding encoding = encoding_auto);
 
-		// Load document from buffer. Copies/converts the buffer, so it may be deleted or changed after the function returns.
+		// Load document from buffer. Copies/converts the buffer, so it may be deleted or changed after the sectionLoader returns.
 		xml_parse_result load_buffer(const void* contents, size_t size, unsigned int options = parse_default, xml_encoding encoding = encoding_auto);
 
 		// Load document from buffer, using the buffer for in-place parsing (the buffer is modified and used for storage of document data).
@@ -1163,7 +1163,7 @@ namespace pugi
 		xml_parse_result load_buffer_inplace(void* contents, size_t size, unsigned int options = parse_default, xml_encoding encoding = encoding_auto);
 
 		// Load document from buffer, using the buffer for in-place parsing (the buffer is modified and used for storage of document data).
-		// You should allocate the buffer with pugixml allocation function; document will free the buffer when it is no longer needed (you can't use it anymore).
+		// You should allocate the buffer with pugixml allocation sectionLoader; document will free the buffer when it is no longer needed (you can't use it anymore).
 		xml_parse_result load_buffer_inplace_own(void* contents, size_t size, unsigned int options = parse_default, xml_encoding encoding = encoding_auto);
 
 		// Save XML document to writer (semantics is slightly different from xml_node::print, see documentation for details).
@@ -1516,10 +1516,10 @@ namespace pugi
 	std::basic_string<wchar_t> PUGIXML_FUNCTION as_wide(const std::basic_string<char>& str);
 #endif
 
-	// Memory allocation function interface; returns pointer to allocated memory or NULL on failure
+	// Memory allocation sectionLoader interface; returns pointer to allocated memory or NULL on failure
 	typedef void* (*allocation_function)(size_t size);
 
-	// Memory deallocation function interface
+	// Memory deallocation sectionLoader interface
 	typedef void (*deallocation_function)(void* ptr);
 
 	// Override default memory management functions. All subsequent allocations/deallocations will be performed via supplied functions.

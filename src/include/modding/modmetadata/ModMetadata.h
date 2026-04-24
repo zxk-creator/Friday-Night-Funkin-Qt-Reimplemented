@@ -6,32 +6,13 @@
 #include <QMap>
 #include <vector>
 #include <optional>
+#include "modding/ModEngineType.h"
 
 using std::optional;
 using std::vector;
 using std::string;
 
-// 专门比较版本的
-class VersionRules
-{
-public:
-    string version;
-
-    VersionRules() = default;
-
-    explicit VersionRules(const string& version)
-    {
-        this->version = version;
-    }
-
-    VersionRules& operator=(const string& other)
-    {
-        version = other;
-        return *this;
-    }
-};
-
-using ModDependencies = QMap<string, VersionRules>;
+using ModDependencies = QMap<string, string>;
 
 // contributors数组里面的每一个元素
 struct contributor
@@ -44,6 +25,8 @@ struct contributor
 // 每个模组都是一个对象！
 struct ModMetadata
 {
+    ModEngineType engineType = ModEngineType::PE;
+
     optional<string> id;
     optional<string> title;
 

@@ -10,6 +10,7 @@ Item {
     property alias verticalAlignment: internalText.verticalAlignment
     property alias font: internalText.font
     property alias color: internalText.color
+    property bool showTextOutline: true
 
     // 让Item的大小自动跟随内部文字大小
     implicitWidth: internalText.implicitWidth
@@ -29,7 +30,6 @@ Item {
         textFormat: Text.StyledText
 
         onLinkActivated: (link) => {
-            console.log("Opening link:", link)
             Qt.openUrlExternally(link)
         }
 
@@ -41,7 +41,7 @@ Item {
         color: "#ffffff"
         renderType: Text.NativeRendering
 
-        style: Text.Outline
+        style: root.showTextOutline ? Text.Outline : Text.Normal
         styleColor: "#000000"
     }
 }

@@ -38,17 +38,20 @@ public:
       * 无论你是Psych Engine还是官方引擎，都能兼容！
       * 其他的引擎，暂时现不管了！
     **/
-    Q_INVOKABLE void scanMods();
+    Q_INVOKABLE void scanModMetadatas();
 
     // qml获取数据的辅助函数！
     bool isReady() const { return m_isReady; }
     // 为什么我不直接把m_model设置为public呢非要写个getter
     ModListModel* model() const { return m_model; }
 
-signals:
+    QVector<ModMetadata> getAllModMetadatas();
+
+    signals:
     void onStateChanged();
 
 private:
+    // 初始化放在.cpp文件中了
     ModListModel *m_model;
     bool m_isReady = false;
 };

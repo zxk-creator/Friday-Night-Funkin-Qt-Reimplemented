@@ -4,6 +4,7 @@ import QtQuick.Layouts
 import "../../fonts"
 import "../../buttons"
 import "../info"
+import "./detailview"
 
 Item{
     id: root
@@ -13,6 +14,8 @@ Item{
     // 使用我们建立的观察者模式数量！
     readonly property bool hasMod: ModManager.model.count > 0
     property real leftDownBtnWidth: gameCanvas.dp(650)
+    // 用户选择的是谁？方便我们把数据传递给模组详情页面。
+    property string selectedModAbsolutePath: ""
 
     // 一进入这个页面就开始扫描模组！
     Component.onCompleted: {
@@ -51,7 +54,7 @@ Item{
         z: 50
 
         onClicked: {
-            ModManager.scanMods();
+            ModManager.scanModMetadatas();
         }
     }
 
@@ -74,7 +77,7 @@ Item{
                 anchors.fill: parent
                 anchors.margins: gameCanvas.dp(20)
                 anchors.bottomMargin: gameCanvas.dp(100)
-                spacing: gameCanvas.dp(20)        // 左右垂直布局之间的间距!
+                spacing: gameCanvas.dp(20)
 
                 // 左侧垂直布局
                 ColumnLayout {
@@ -108,7 +111,7 @@ Item{
                         hoverMsg: qsTr("关闭所有模组（这样只有一个教程可以玩...）")
                         showHoverMsg: true
                         Component.onCompleted: root.leftDownBtnWidth
-                        onWidthChanged: root.disableAllBtnWidth = width
+                        onWidthChanged: root.leftDownBtnWidth = width
                     }
                 }
 
@@ -139,10 +142,14 @@ Item{
                                     else return "file://" + absolutePath;
                                 }
                                 id: bigIcon
-                                // 绑定我们ModItem里面被自动注入的modelData对象！他也会跟着改变
-                                source: (modsListView.currentItem && modsListView.currentItem.micon)
-                                    ?  getfileUrl(modsListView.currentItem.micon)
-                                    : "qrc:/mods/default/images/icons/unknownMod.png"
+                                // 绑定我们ModItem里面被自动注入的modelData对象！他也会跟着改变，顺便修改选中的路径
+                                source: {
+                                    if (modsListView.currentItem && modsListView.currentItem.micon){
+                                        root.selectedModAbsolutePath = modsListView.currentItem.mpath;
+                                        return getfileUrl(modsListView.currentItem.micon);
+                                    }
+                                    else return "qrc:/mods/default/images/icons/unknownMod.png";
+                                }
                                 Layout.preferredWidth: gameCanvas.dp(150)
                                 Layout.preferredHeight: gameCanvas.dp(150)
                                 Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
@@ -207,8 +214,11 @@ Item{
                             text: qsTr("查看模组详情！")
                             hoverMsg: qsTr("查看此模组的详细信息，比如角色贴图，箭头皮肤，歌曲等等。")
                             showHoverMsg: true
-                            pressMsg: qsTr("暂未开放，敬请期待！")
-                            showPressMsg: true
+                            onClicked:{
+                                // 后面跟一个"modData": ..代表传入的数据
+                                mainStack.push("detailview/ModDetailView.qml",root.selectedModAbsolutePath);
+                            }
+                            showPressMsg: false;
                         }
                     }
                 }

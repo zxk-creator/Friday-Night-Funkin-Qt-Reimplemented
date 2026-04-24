@@ -43,6 +43,20 @@ set(PROJECT_SOURCES
         src/src/modding/scan/ModManager.cpp
         src/src/modding/modmetadata/ModMetadata.cpp
         src/include/permissions/GetAndroidStoragePermission.h
+        src/include/data/BaseRegistry.h
+        src/include/modding/modmetadata/VersonRule.h
+        src/thirdParty/semver/semver.h
+        src/include/utils/VersionUtil.h
+        src/include/data/IRegistrableEntry.h
+        src/include/data/level/LevelRegistry.h
+        src/include/data/level/LevelData.h
+        src/include/modding/ModEngineType.h
+        src/include/data/animation/AnimationData.h
+        src/include/data/stage/StageData.h
+        src/include/utils/exception/CustomException.h
+        src/src/utils/exception/CustomException.cpp
+        src/src/data/level/LevelData.cpp
+        src/src/utils/file/FileUtil.h
 )
 
 set(CMAKE_AUTORCC ON)
@@ -77,6 +91,9 @@ if(QT_VERSION VERSION_GREATER_EQUAL 6.2)
             QML/fonts/Mainfont.qml
             QML/views/modding/Modlist.qml
             QML/views/modding/ModItem.qml
+            QML/views/modding/detailview/BottomBar.qml
+            QML/views/modding/detailview/ModDetailView.qml
+            QML/views/modding/detailview/sectionLoader/AssetPreview.qml
             QML/buttons/DefaultButton.qml
             QML/views/modding/EmptyModView.qml
             QML/views/info/ViceCityInfo.qml

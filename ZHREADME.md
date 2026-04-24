@@ -8,7 +8,7 @@
 - 兴趣驱动学习，所以就有了这个项目。
 - 原本使用UE5开发，最后战略转型。
 - 准备定名为 **Quark Engine**
-- 不基于任何原版引擎，纯手搓。
+- 不基于任何原版引擎，从零开始纯手搓！
 - *代码写的有点水。*
 
 ## 🛠 实现路线：
@@ -23,6 +23,7 @@
 
 ## ✅ 如何构建：
 克隆本项目后随便拷贝到磁盘的某个位置用VS或者CLion打开项目下的CMakeList.txt即可。需要先根据Qt文档下载依赖库搭建开发环境。
+后续将会使用dockerfile一键编译。
 
 ## 🚀 开发环境
 <img src="./DocumentImages/Clion.png" width="50" alt="CLion">
@@ -43,13 +44,23 @@
 **Laokun**
 
 ## 📁 项目结构
-类似原版FNF（官方引擎）
+**类似原版FNF（官方引擎）**
+* QML: 界面描述文件
+* src: 源代码文件
+* src/include: 头文件，包含部分实现
+* src/src: .cpp源代码文件
+* docker: 一键拉取后即可编译（尚未实现）
+* android: 构建安卓apk时相关的Java代码和清单文件
+* mod: 游戏运行的基本美术资源，取自官方引擎（不包含全部可玩周目）
+* main.cpp，程序运行主入口。**你可以从这里开始参考。**
+* rc: windows图标文件。
 
 ## 📄 许可证
 Qt的
 
 ## 📸 截图
-想看Hello World吗
+* 模组选择界面
+<img src="./DocumentImages/ScreenShots/ModSelectScreen.png" width="1000" alt="ModSelect">
 
 ## 💬 联系作者
 https://space.bilibili.com/533393738?spm_id_from=333.1007.0.0

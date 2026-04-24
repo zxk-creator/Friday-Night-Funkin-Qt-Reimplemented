@@ -14,6 +14,8 @@ Item {
     property bool showPressMsg: false;
     property string hoverMsg: ""
     property string pressMsg: ""
+    property int buttonRadius: 10;
+    property bool showTextOutline: true
     signal clicked() // 定义点击信号
 
     // 没设置width时生效
@@ -23,7 +25,7 @@ Item {
     Rectangle {
         id: bg
         anchors.fill: parent
-        radius: 10
+        radius: buttonRadius
         color: ma.containsPress
             ? root.pressColor          // 点击时
             : (ma.containsMouse
@@ -35,6 +37,7 @@ Item {
         Mainfont {
             id: label
             anchors.centerIn: parent
+            showTextOutline: root.showTextOutline
             color: "white"
         }
 

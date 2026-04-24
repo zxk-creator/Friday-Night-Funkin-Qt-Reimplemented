@@ -1334,10 +1334,10 @@ NLOHMANN_JSON_NAMESPACE_END
 #if defined(JSON_HEDLEY_DIAGNOSTIC_DISABLE_UNUSED_FUNCTION)
     #undef JSON_HEDLEY_DIAGNOSTIC_DISABLE_UNUSED_FUNCTION
 #endif
-#if JSON_HEDLEY_HAS_WARNING("-Wunused-function")
-    #define JSON_HEDLEY_DIAGNOSTIC_DISABLE_UNUSED_FUNCTION _Pragma("clang diagnostic ignored \"-Wunused-function\"")
+#if JSON_HEDLEY_HAS_WARNING("-Wunused-sectionLoader")
+    #define JSON_HEDLEY_DIAGNOSTIC_DISABLE_UNUSED_FUNCTION _Pragma("clang diagnostic ignored \"-Wunused-sectionLoader\"")
 #elif JSON_HEDLEY_GCC_VERSION_CHECK(3,4,0)
-    #define JSON_HEDLEY_DIAGNOSTIC_DISABLE_UNUSED_FUNCTION _Pragma("GCC diagnostic ignored \"-Wunused-function\"")
+    #define JSON_HEDLEY_DIAGNOSTIC_DISABLE_UNUSED_FUNCTION _Pragma("GCC diagnostic ignored \"-Wunused-sectionLoader\"")
 #elif JSON_HEDLEY_MSVC_VERSION_CHECK(1,0,0)
     #define JSON_HEDLEY_DIAGNOSTIC_DISABLE_UNUSED_FUNCTION __pragma(warning(disable:4505))
 #elif JSON_HEDLEY_MCST_LCC_VERSION_CHECK(1,25,10)
@@ -2909,7 +2909,7 @@ JSON_HEDLEY_DIAGNOSTIC_POP
     void to_json(BasicJsonType& nlohmann_json_j, const Type& nlohmann_json_t) { nlohmann::to_json(nlohmann_json_j, static_cast<const BaseType &>(nlohmann_json_t)); NLOHMANN_JSON_EXPAND(NLOHMANN_JSON_PASTE(NLOHMANN_JSON_TO, __VA_ARGS__)) }
 
 // inspired from https://stackoverflow.com/a/26745591
-// allows calling any std function as if (e.g., with begin):
+// allows calling any std sectionLoader as if (e.g., with begin):
 // using std::begin; begin(x);
 //
 // it allows using the detected idiom to retrieve the return type
@@ -3011,7 +3011,7 @@ enum class value_t : std::uint8_t
     number_unsigned,  ///< number value (unsigned integer)
     number_float,     ///< number value (floating-point)
     binary,           ///< binary array (ordered collection of bytes)
-    discarded         ///< discarded by the parser callback function
+    discarded         ///< discarded by the parser callback sectionLoader
 };
 
 /*!
@@ -3590,7 +3590,7 @@ namespace detail
 // The only exceptions are in the 'aliases for detected' section
 // (i.e., those of the form: decltype(T::member_function(std::declval<T>())))
 //
-// In this case, T has to be properly CV-qualified to constraint the function arguments
+// In this case, T has to be properly CV-qualified to constraint the sectionLoader arguments
 // (e.g., to_json(BasicJsonType&, const T&))
 
 template<typename> struct is_basic_json : std::false_type {};
@@ -3744,7 +3744,7 @@ struct char_traits<unsigned char> : std::char_traits<char>
     using char_type = unsigned char;
     using int_type = uint64_t;
 
-    // Redefine to_int_type function
+    // Redefine to_int_type sectionLoader
     static int_type to_int_type(char_type c) noexcept
     {
         return static_cast<int_type>(c);
@@ -3768,7 +3768,7 @@ struct char_traits<signed char> : std::char_traits<char>
     using char_type = signed char;
     using int_type = uint64_t;
 
-    // Redefine to_int_type function
+    // Redefine to_int_type sectionLoader
     static int_type to_int_type(char_type c) noexcept
     {
         return static_cast<int_type>(c);
@@ -4146,7 +4146,7 @@ struct is_comparable : std::false_type {};
 // We exclude json_pointer here, because the checks using Compare(A, B) will
 // use json_pointer::operator string_t() which triggers a deprecation warning
 // for GCC. See https://github.com/nlohmann/json/issues/4621. The call to
-// is_json_pointer_of can be removed once the deprecated function has been
+// is_json_pointer_of can be removed once the deprecated sectionLoader has been
 // removed.
 template<typename Compare, typename A, typename B>
 struct is_comparable < Compare, A, B, enable_if_t < !is_json_pointer_of<A, B>::value
@@ -4737,7 +4737,7 @@ class invalid_iterator : public exception
         : exception(id_, what_arg) {}
 };
 
-/// @brief exception indicating executing a member function with a wrong type
+/// @brief exception indicating executing a member sectionLoader with a wrong type
 /// @sa https://json.nlohmann.me/api/basic_json/type_error/
 class type_error : public exception
 {
@@ -5401,7 +5401,7 @@ struct from_json_fn
 }  // namespace detail
 
 #ifndef JSON_HAS_CPP_17
-/// namespace to hold default `from_json` function
+/// namespace to hold default `from_json` sectionLoader
 /// to see why this is required:
 /// http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2015/n4381.html
 namespace // NOLINT(cert-dcl59-cpp,fuchsia-header-anon-namespaces,google-build-namespaces)
@@ -5633,7 +5633,7 @@ template<typename IteratorType> class iteration_proxy_value
     }
 };
 
-/// proxy class for the items() function
+/// proxy class for the items() sectionLoader
 template<typename IteratorType> class iteration_proxy
 {
   private:
@@ -6172,7 +6172,7 @@ struct to_json_fn
 }  // namespace detail
 
 #ifndef JSON_HAS_CPP_17
-/// namespace to hold default `to_json` function
+/// namespace to hold default `to_json` sectionLoader
 /// to see why this is required:
 /// http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2015/n4381.html
 namespace // NOLINT(cert-dcl59-cpp,fuchsia-header-anon-namespaces,google-build-namespaces)
@@ -6374,7 +6374,7 @@ inline std::size_t combine(std::size_t seed, std::size_t h) noexcept
 /*!
 @brief hash a JSON value
 
-The hash function tries to rely on std::hash where possible. Furthermore, the
+The hash sectionLoader tries to rely on std::hash where possible. Furthermore, the
 type of the JSON value is taken into account to have different hash values for
 null, 0, 0U, and false, etc.
 
@@ -7253,7 +7253,7 @@ class lexer : public lexer_base<BasicJsonType>
     */
     int get_codepoint()
     {
-        // this function only makes sense after reading `\u`
+        // this sectionLoader only makes sense after reading `\u`
         JSON_ASSERT(current == 'u');
         int codepoint = 0;
 
@@ -7324,9 +7324,9 @@ class lexer : public lexer_base<BasicJsonType>
     /*!
     @brief scan a string literal
 
-    This function scans a string according to Sect. 7 of RFC 8259. While
+    This sectionLoader scans a string according to Sect. 7 of RFC 8259. While
     scanning, bytes are escaped and copied into buffer token_buffer. Then the
-    function returns successfully, token_buffer is *not* null-terminated (as it
+    sectionLoader returns successfully, token_buffer is *not* null-terminated (as it
     may contain \0 bytes), and token_buffer.size() is the number of bytes in the
     string.
 
@@ -7341,7 +7341,7 @@ class lexer : public lexer_base<BasicJsonType>
         // reset token_buffer (ignore opening quote)
         reset();
 
-        // we entered the function by reading an open quote
+        // we entered the sectionLoader by reading an open quote
         JSON_ASSERT(current == '\"');
 
         while (true)
@@ -8014,9 +8014,9 @@ class lexer : public lexer_base<BasicJsonType>
     /*!
     @brief scan a number literal
 
-    This function scans a string according to Sect. 6 of RFC 8259.
+    This sectionLoader scans a string according to Sect. 6 of RFC 8259.
 
-    The function is realized with a deterministic finite state machine derived
+    The sectionLoader is realized with a deterministic finite state machine derived
     from the grammar described in RFC 8259. Starting in state "init", the
     input is read and used to determined the next state. Only state "done"
     accepts the number. State "error" is a trap state to model errors. In the
@@ -8037,7 +8037,7 @@ class lexer : public lexer_base<BasicJsonType>
     The state machine is realized with one label per state (prefixed with
     "scan_number_") and `goto` statements between them. The state machine
     contains cycles, but any cycle can be left when EOF is read. Therefore,
-    the function is guaranteed to terminate.
+    the sectionLoader is guaranteed to terminate.
 
     During scanning, the read bytes are stored in token_buffer. This string is
     then converted to a signed integer, an unsigned integer, or a
@@ -8051,7 +8051,7 @@ class lexer : public lexer_base<BasicJsonType>
           locale's decimal point is used instead of `.` to work with the
           locale-dependent converters.
     */
-    token_type scan_number()  // lgtm [cpp/use-of-goto] `goto` is used in this function to implement the number-parsing state machine described above. By design, any finite input will eventually reach the "done" state or return token_type::parse_error. In each intermediate state, 1 byte of the input is appended to the token_buffer vector, and only the already initialized variables token_buffer, number_type, and error_message are manipulated.
+    token_type scan_number()  // lgtm [cpp/use-of-goto] `goto` is used in this sectionLoader to implement the number-parsing state machine described above. By design, any finite input will eventually reach the "done" state or return token_type::parse_error. In each intermediate state, 1 byte of the input is appended to the token_buffer vector, and only the already initialized variables token_buffer, number_type, and error_message are manipulated.
     {
         // reset token_buffer to store the number's bytes
         reset();
@@ -8415,7 +8415,7 @@ scan_number_done:
     /*
     @brief get next character from the input
 
-    This function provides the interface to the used input adapter. It does
+    This sectionLoader provides the interface to the used input adapter. It does
     not throw in case the input reached EOF, but returns a
     `char_traits<char>::eof()` in that case.  Stores the scanned characters
     for use in error messages.
@@ -8736,7 +8736,7 @@ NLOHMANN_JSON_NAMESPACE_BEGIN
 @brief SAX interface
 
 This class describes the SAX interface used by @ref nlohmann::json::sax_parse.
-Each function is called in different situations while the input is parsed. The
+Each sectionLoader is called in different situations while the input is parsed. The
 boolean return value informs the parser whether to continue processing the
 input.
 */
@@ -9516,9 +9516,9 @@ class json_sax_dom_callback_parser
     /*!
     @param[in] v  value to add to the JSON value we build during parsing
     @param[in] skip_callback  whether we should skip calling the callback
-               function; this is required after start_array() and
+               sectionLoader; this is required after start_array() and
                start_object() SAX events, because otherwise we would call the
-               callback function with an empty array or object, respectively.
+               callback sectionLoader with an empty array or object, respectively.
 
     @invariant If the ref stack is empty, then the passed value will be the new
                root.
@@ -9608,7 +9608,7 @@ class json_sax_dom_callback_parser
     BasicJsonType* object_element = nullptr;
     /// whether a syntax error occurred
     bool errored = false;
-    /// callback function
+    /// callback sectionLoader
     const parser_callback_t callback = nullptr;
     /// whether to throw exceptions in case of errors
     const bool allow_exceptions = true;
@@ -9824,41 +9824,41 @@ struct is_sax_static_asserts
 
   public:
     static_assert(is_detected_exact<bool, null_function_t, SAX>::value,
-                  "Missing/invalid function: bool null()");
+                  "Missing/invalid sectionLoader: bool null()");
     static_assert(is_detected_exact<bool, boolean_function_t, SAX>::value,
-                  "Missing/invalid function: bool boolean(bool)");
+                  "Missing/invalid sectionLoader: bool boolean(bool)");
     static_assert(is_detected_exact<bool, boolean_function_t, SAX>::value,
-                  "Missing/invalid function: bool boolean(bool)");
+                  "Missing/invalid sectionLoader: bool boolean(bool)");
     static_assert(
         is_detected_exact<bool, number_integer_function_t, SAX,
         number_integer_t>::value,
-        "Missing/invalid function: bool number_integer(number_integer_t)");
+        "Missing/invalid sectionLoader: bool number_integer(number_integer_t)");
     static_assert(
         is_detected_exact<bool, number_unsigned_function_t, SAX,
         number_unsigned_t>::value,
-        "Missing/invalid function: bool number_unsigned(number_unsigned_t)");
+        "Missing/invalid sectionLoader: bool number_unsigned(number_unsigned_t)");
     static_assert(is_detected_exact<bool, number_float_function_t, SAX,
                   number_float_t, string_t>::value,
-                  "Missing/invalid function: bool number_float(number_float_t, const string_t&)");
+                  "Missing/invalid sectionLoader: bool number_float(number_float_t, const string_t&)");
     static_assert(
         is_detected_exact<bool, string_function_t, SAX, string_t>::value,
-        "Missing/invalid function: bool string(string_t&)");
+        "Missing/invalid sectionLoader: bool string(string_t&)");
     static_assert(
         is_detected_exact<bool, binary_function_t, SAX, binary_t>::value,
-        "Missing/invalid function: bool binary(binary_t&)");
+        "Missing/invalid sectionLoader: bool binary(binary_t&)");
     static_assert(is_detected_exact<bool, start_object_function_t, SAX>::value,
-                  "Missing/invalid function: bool start_object(std::size_t)");
+                  "Missing/invalid sectionLoader: bool start_object(std::size_t)");
     static_assert(is_detected_exact<bool, key_function_t, SAX, string_t>::value,
-                  "Missing/invalid function: bool key(string_t&)");
+                  "Missing/invalid sectionLoader: bool key(string_t&)");
     static_assert(is_detected_exact<bool, end_object_function_t, SAX>::value,
-                  "Missing/invalid function: bool end_object()");
+                  "Missing/invalid sectionLoader: bool end_object()");
     static_assert(is_detected_exact<bool, start_array_function_t, SAX>::value,
-                  "Missing/invalid function: bool start_array(std::size_t)");
+                  "Missing/invalid sectionLoader: bool start_array(std::size_t)");
     static_assert(is_detected_exact<bool, end_array_function_t, SAX>::value,
-                  "Missing/invalid function: bool end_array()");
+                  "Missing/invalid sectionLoader: bool end_array()");
     static_assert(
         is_detected_exact<bool, parse_error_function_t, SAX, exception_t>::value,
-        "Missing/invalid function: bool parse_error(std::size_t, const "
+        "Missing/invalid sectionLoader: bool parse_error(std::size_t, const "
         "std::string&, const exception&)");
 };
 
@@ -10746,7 +10746,7 @@ class binary_reader
     /*!
     @brief reads a CBOR string
 
-    This function first reads starting bytes to determine the expected
+    This sectionLoader first reads starting bytes to determine the expected
     string length and then copies this number of bytes into a string.
     Additionally, CBOR's strings with indefinite lengths are supported.
 
@@ -10842,7 +10842,7 @@ class binary_reader
     /*!
     @brief reads a CBOR byte array
 
-    This function first reads starting bytes to determine the expected
+    This sectionLoader first reads starting bytes to determine the expected
     byte array length and then copies this number of bytes into the byte array.
     Additionally, CBOR's byte arrays with indefinite lengths are supported.
 
@@ -11413,7 +11413,7 @@ class binary_reader
     /*!
     @brief reads a MessagePack string
 
-    This function first reads starting bytes to determine the expected
+    This sectionLoader first reads starting bytes to determine the expected
     string length and then copies this number of bytes into a string.
 
     @param[out] result  created string
@@ -11496,7 +11496,7 @@ class binary_reader
     /*!
     @brief reads a MessagePack byte array
 
-    This function first reads starting bytes to determine the expected
+    This sectionLoader first reads starting bytes to determine the expected
     byte array length and then copies this number of bytes into a byte array.
 
     @param[out] result  created byte array
@@ -11505,7 +11505,7 @@ class binary_reader
     */
     bool get_msgpack_binary(binary_t& result)
     {
-        // helper function to set the subtype
+        // helper sectionLoader to set the subtype
         auto assign_and_return_true = [&result](std::int8_t subtype)
         {
             result.set_subtype(static_cast<std::uint8_t>(subtype));
@@ -11681,7 +11681,7 @@ class binary_reader
     /*!
     @brief reads a UBJSON string
 
-    This function is either called after reading the 'S' byte explicitly
+    This sectionLoader is either called after reading the 'S' byte explicitly
     indicating a string, or in case of an object key where the 'S' byte can be
     left out.
 
@@ -12614,7 +12614,7 @@ class binary_reader
     /*!
     @brief get next character from the input
 
-    This function provides the interface to the used input adapter. It does
+    This sectionLoader provides the interface to the used input adapter. It does
     not throw in case the input reached EOF, but returns a -'ve valued
     `char_traits<char_type>::eof()` in that case.
 
@@ -12629,7 +12629,7 @@ class binary_reader
     /*!
     @brief get_to read into a primitive type
 
-    This function provides the interface to the used input adapter. It does
+    This sectionLoader provides the interface to the used input adapter. It does
     not throw in case the input reached EOF, but returns false instead
 
     @return bool, whether the read was successful
@@ -12699,7 +12699,7 @@ class binary_reader
 
     @return whether conversion completed
 
-    @note This function needs to respect the system's endianness, because
+    @note This sectionLoader needs to respect the system's endianness, because
           bytes in CBOR, MessagePack, and UBJSON are stored in network order
           (big endian) and therefore need reordering on little endian systems.
           On the other hand, BSON and BJData use little endian and should reorder
@@ -12935,7 +12935,7 @@ NLOHMANN_JSON_NAMESPACE_END
 
 #include <cmath> // isfinite
 #include <cstdint> // uint8_t
-#include <functional> // function
+#include <functional> // sectionLoader
 #include <string> // string
 #include <utility> // move
 #include <vector> // vector
@@ -13049,7 +13049,7 @@ class parser
             }
 
             // set top-level value to null if it was discarded by the callback
-            // function
+            // sectionLoader
             if (result.is_discarded())
             {
                 result = nullptr;
@@ -13453,7 +13453,7 @@ class parser
     }
 
   private:
-    /// callback function
+    /// callback sectionLoader
     const parser_callback_t<BasicJsonType> callback = nullptr;
     /// the type of the last read token
     token_type last_token = token_type::uninitialized;
@@ -14176,7 +14176,7 @@ class iter_impl // NOLINT(cppcoreguidelines-special-member-functions,hicpp-speci
         // value-initialized forward iterators can be compared, and must compare equal to other value-initialized iterators of the same type #4493
         if (m_object == nullptr)
         {
-            // the iterators are both value-initialized and are to be considered equal, but this function checks for smaller, so we return false
+            // the iterators are both value-initialized and are to be considered equal, but this sectionLoader checks for smaller, so we return false
             return false;
         }
 
@@ -14931,7 +14931,7 @@ class json_pointer
     @brief return a reference to the pointed to value
 
     @note This version does not throw if a value is not present, but tries to
-          create nested values instead. For instance, calling this function
+          create nested values instead. For instance, calling this sectionLoader
           with pointer `"/this/that"` on a null value is equivalent to calling
           `operator[]("this").operator[]("that")` on that value, effectively
           changing the null value to an object.
@@ -15253,7 +15253,7 @@ class json_pointer
     /*!
     @brief split the string input to reference tokens
 
-    @note This function is only called by the json_pointer constructor.
+    @note This sectionLoader is only called by the json_pointer constructor.
           All exceptions below are documented there.
 
     @throw parse_error.107  if the pointer is not empty or begins with '/'
@@ -15419,7 +15419,7 @@ class json_pointer
 
             // Assign the value to the reference pointed to by JSON pointer. Note
             // that if the JSON pointer is "" (i.e., points to the whole value),
-            // function get_and_create returns a reference to the result itself.
+            // sectionLoader get_and_create returns a reference to the result itself.
             // An assignment will then create a primitive value.
             json_pointer(element.first).get_and_create(result) = element.second;
         }
@@ -17579,7 +17579,7 @@ class binary_writer
                                  required to be little endian
     @tparam NumberType the type of the number
 
-    @note This function needs to respect the system's endianness, because bytes
+    @note This sectionLoader needs to respect the system's endianness, because bytes
           in CBOR, MessagePack, and UBJSON are stored in network order (big
           endian) and therefore need reordering on little endian systems.
           On the other hand, BSON and BJData use little endian and should reorder
@@ -18044,7 +18044,7 @@ struct cached_power // c = f * 2^e ~= 10^k
 };
 
 /*!
-For a normalized diyfp w = f * 2^e, this function returns a (normalized) cached
+For a normalized diyfp w = f * 2^e, this sectionLoader returns a (normalized) cached
 power-of-ten c = f_c * 2^e_c, such that the exponent of the product w * c
 satisfies (Definition 3.2 from [1])
 
@@ -18070,7 +18070,7 @@ inline cached_power get_cached_power_for_binary_exponent(int e)
     // From the paper:
     // "In theory the result of the procedure could be wrong since c is rounded,
     //  and the computation itself is approximated [...]. In practice, however,
-    //  this simple function is sufficient."
+    //  this simple sectionLoader is sufficient."
     //
     // For IEEE double precision floating-point numbers converted into
     // normalized diyfp's w = f * 2^e, with q = 64,
@@ -18100,7 +18100,7 @@ inline cached_power get_cached_power_for_binary_exponent(int e)
     // (A smaller distance gamma-alpha would require a larger table.)
 
     // NB:
-    // Actually, this function returns c, such that -60 <= e_c + e + 64 <= -34.
+    // Actually, this sectionLoader returns c, such that -60 <= e_c + e + 64 <= -34.
 
     constexpr int kCachedPowersMinDecExp = -300;
     constexpr int kCachedPowersDecStep = 8;
@@ -18627,7 +18627,7 @@ void grisu2(char* buf, int& len, int& decimal_exponent, FloatType value)
     // and since sprintf promotes floats to doubles, I think this is exactly what 'std::to_chars'
     // does.
     // On the other hand, the documentation for 'std::to_chars' requires that "parsing the
-    // representation using the corresponding std::from_chars function recovers value exactly". That
+    // representation using the corresponding std::from_chars sectionLoader recovers value exactly". That
     // indicates that single precision floating-point numbers should be recovered using
     // 'std::strtof'.
     //
@@ -18909,11 +18909,11 @@ class serializer
     ~serializer() = default;
 
     /*!
-    @brief internal implementation of the serialization function
+    @brief internal implementation of the serialization sectionLoader
 
-    This function is called by the public member function dump and organizes
+    This sectionLoader is called by the public member sectionLoader dump and organizes
     the serialization internally. The indentation level is propagated as
-    additional parameter. In case of arrays and objects, the function is
+    additional parameter. In case of arrays and objects, the sectionLoader is
     called recursively.
 
     - strings and object keys are escaped using `escape_string()`
@@ -19705,8 +19705,8 @@ class serializer
     /*!
     @brief check whether a string is UTF-8 encoded
 
-    The function checks each byte of a string whether it is UTF-8 encoded. The
-    result of the check is stored in the @a state parameter. The function must
+    The sectionLoader checks each byte of a string whether it is UTF-8 encoded. The
+    result of the check is stored in the @a state parameter. The sectionLoader must
     be called initially with state 0 (accept). State 1 means the string must
     be rejected, because the current byte is not allowed. If the string is
     completely processed, but the state is non-zero, the string ended
@@ -19718,7 +19718,7 @@ class serializer
     @param[in] byte       next byte to decode
     @return               new state
 
-    @note The function has been edited: a std::array is used.
+    @note The sectionLoader has been edited: a std::array is used.
 
     @copyright Copyright (c) 2008-2009 Bjoern Hoehrmann <bjoern@hoehrmann.de>
     @sa http://bjoern.hoehrmann.de/utf-8/decoder/dfa/
@@ -19770,9 +19770,9 @@ class serializer
     }
 
     /*
-     * Helper function for dump_integer
+     * Helper sectionLoader for dump_integer
      *
-     * This function takes a negative signed integer and returns its absolute
+     * This sectionLoader takes a negative signed integer and returns its absolute
      * value as an unsigned integer. The plus/minus shuffling is necessary as we
      * cannot directly remove the sign of an arbitrary signed integer as the
      * absolute values of INT_MIN and INT_MAX are usually not the same. See
@@ -20204,7 +20204,7 @@ relationship:
 - If `m_type == value_t::object`, then `m_value.object != nullptr`.
 - If `m_type == value_t::array`, then `m_value.array != nullptr`.
 - If `m_type == value_t::string`, then `m_value.string != nullptr`.
-The invariants are checked by member function assert_invariant().
+The invariants are checked by member sectionLoader assert_invariant().
 
 @note ObjectType trick from https://stackoverflow.com/a/9860911
 @endinternal
@@ -20787,7 +20787,7 @@ class basic_json // NOLINT(cppcoreguidelines-special-member-functions,hicpp-spec
     /*!
     @brief checks the class invariants
 
-    This function asserts the class invariants. It needs to be called at the
+    This sectionLoader asserts the class invariants. It needs to be called at the
     end of every constructor to make sure that created objects respect the
     invariant. Furthermore, it has to be called each time the type of a JSON
     value is changed, because the invariant expresses a relationship between
@@ -21656,9 +21656,9 @@ class basic_json // NOLINT(cppcoreguidelines-special-member-functions,hicpp-spec
     }
 
     /*!
-    @brief helper function to implement get_ref()
+    @brief helper sectionLoader to implement get_ref()
 
-    This function helps to implement get_ref() without code duplication for
+    This sectionLoader helps to implement get_ref() without code duplication for
     const and non-const overloads
 
     @tparam ThisType will be deduced as `basic_json` or `const basic_json`
@@ -21716,7 +21716,7 @@ class basic_json // NOLINT(cppcoreguidelines-special-member-functions,hicpp-spec
     The value is converted by calling the @ref json_serializer<ValueType>
     `from_json()` method.
 
-    The function is equivalent to executing
+    The sectionLoader is equivalent to executing
     @code {.cpp}
     ValueType ret;
     JSONSerializer<ValueType>::from_json(*this, ret);
@@ -21767,7 +21767,7 @@ class basic_json // NOLINT(cppcoreguidelines-special-member-functions,hicpp-spec
     The value is converted by calling the @ref json_serializer<ValueType>
     `from_json()` method.
 
-    The function is equivalent to executing
+    The sectionLoader is equivalent to executing
     @code {.cpp}
     return JSONSerializer<ValueType>::from_json(*this);
     @endcode
@@ -22753,7 +22753,7 @@ class basic_json // NOLINT(cppcoreguidelines-special-member-functions,hicpp-spec
     size_type erase(const typename object_t::key_type& key)
     {
         // the indirection via erase_internal() is added to avoid making this
-        // function a template and thus de-rank it during overload resolution
+        // sectionLoader a template and thus de-rank it during overload resolution
         return erase_internal(key);
     }
 
@@ -23007,7 +23007,7 @@ class basic_json // NOLINT(cppcoreguidelines-special-member-functions,hicpp-spec
   public:
     /// @brief wrapper to access iterator member functions in range-based for
     /// @sa https://json.nlohmann.me/api/basic_json/items/
-    /// @deprecated This function is deprecated since 3.1.0 and will be removed in
+    /// @deprecated This sectionLoader is deprecated since 3.1.0 and will be removed in
     ///             version 4.0.0 of the library. Please use @ref items() instead;
     ///             that is, replace `json::iterator_wrapper(j)` with `j.items()`.
     JSON_HEDLEY_DEPRECATED_FOR(3.1.0, items())
@@ -23018,7 +23018,7 @@ class basic_json // NOLINT(cppcoreguidelines-special-member-functions,hicpp-spec
 
     /// @brief wrapper to access iterator member functions in range-based for
     /// @sa https://json.nlohmann.me/api/basic_json/items/
-    /// @deprecated This function is deprecated since 3.1.0 and will be removed in
+    /// @deprecated This sectionLoader is deprecated since 3.1.0 and will be removed in
     ///         version 4.0.0 of the library. Please use @ref items() instead;
     ///         that is, replace `json::iterator_wrapper(j)` with `j.items()`.
     JSON_HEDLEY_DEPRECATED_FOR(3.1.0, items())
@@ -24139,7 +24139,7 @@ class basic_json // NOLINT(cppcoreguidelines-special-member-functions,hicpp-spec
 
     /// @brief serialize to stream
     /// @sa https://json.nlohmann.me/api/basic_json/operator_ltlt/
-    /// @deprecated This function is deprecated since 3.0.0 and will be removed in
+    /// @deprecated This sectionLoader is deprecated since 3.0.0 and will be removed in
     ///             version 4.0.0 of the library. Please use
     ///             operator<<(std::ostream&, const basic_json&) instead; that is,
     ///             replace calls like `j >> o;` with `o << j;`.
@@ -24297,7 +24297,7 @@ class basic_json // NOLINT(cppcoreguidelines-special-member-functions,hicpp-spec
 
     /// @brief generate SAX events
     /// @sa https://json.nlohmann.me/api/basic_json/sax_parse/
-    /// @deprecated This function is deprecated since 3.8.0 and will be removed in
+    /// @deprecated This sectionLoader is deprecated since 3.8.0 and will be removed in
     ///             version 4.0.0 of the library. Please use
     ///             sax_parse(ptr, ptr + len) instead.
     template <typename SAX>
@@ -25376,7 +25376,7 @@ class basic_json // NOLINT(cppcoreguidelines-special-member-functions,hicpp-spec
     /// @}
 };
 
-/// @brief user-defined to_string function for JSON values
+/// @brief user-defined to_string sectionLoader for JSON values
 /// @sa https://json.nlohmann.me/api/basic_json/to_string/
 NLOHMANN_BASIC_JSON_TPL_DECLARATION
 std::string to_string(const NLOHMANN_BASIC_JSON_TPL& j)
@@ -25472,7 +25472,7 @@ struct less< ::nlohmann::detail::value_t> // do not remove the space after '<', 
     }
 };
 
-// C++20 prohibit function specialization in the std namespace.
+// C++20 prohibit sectionLoader specialization in the std namespace.
 #ifndef JSON_HAS_CPP_20
 
 /// @brief exchanges the values of two JSON objects

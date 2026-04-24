@@ -158,7 +158,7 @@ extern int stb_vorbis_get_error(stb_vorbis *f);
 // close an ogg vorbis file and free all memory in use
 extern void stb_vorbis_close(stb_vorbis *f);
 
-// this function returns the offset (in samples) from the beginning of the
+// this sectionLoader returns the offset (in samples) from the beginning of the
 // file that will be returned by the next decode, if it is known, or -1
 // otherwise. after a flush_pushdata() call, this may take a while before
 // it becomes valid again.
@@ -284,7 +284,7 @@ extern stb_vorbis * stb_vorbis_open_file(FILE *f, int close_handle_on_close,
 // calls to stb_vorbis, it will become confused. Moreover, if you attempt to
 // perform stb_vorbis_seek_*() operations on this file, it will assume it
 // owns the _entire_ rest of the file after the start point. Use the next
-// function, stb_vorbis_open_file_section(), to limit it.
+// sectionLoader, stb_vorbis_open_file_section(), to limit it.
 
 extern stb_vorbis * stb_vorbis_open_file_section(FILE *f, int close_handle_on_close,
                 int *error, const stb_vorbis_alloc *alloc_buffer, unsigned int len);
@@ -305,7 +305,7 @@ extern int stb_vorbis_seek(stb_vorbis *f, unsigned int sample_number);
 // you can also use seek_frame().
 
 extern int stb_vorbis_seek_start(stb_vorbis *f);
-// this function is equivalent to stb_vorbis_seek(f,0)
+// this sectionLoader is equivalent to stb_vorbis_seek(f,0)
 
 extern unsigned int stb_vorbis_stream_length_in_samples(stb_vorbis *f);
 extern float        stb_vorbis_stream_length_in_seconds(stb_vorbis *f);
@@ -2638,7 +2638,7 @@ static void inverse_mdct(float *buffer, int n, vorb *f, int blocktype)
    float *A = f->A[blocktype];
 
    // IMDCT algorithm from "The use of multirate filter banks for coding of high quality digital audio"
-   // See notes about bugs in that paper in less-optimal implementation 'inverse_mdct_old' after this function.
+   // See notes about bugs in that paper in less-optimal implementation 'inverse_mdct_old' after this sectionLoader.
 
    // kernel from paper
 
@@ -4670,7 +4670,7 @@ static int get_seek_page_info(stb_vorbis *f, ProbedPage *z)
    return 1;
 }
 
-// rarely used function to seek back to the preceding page while finding the
+// rarely used sectionLoader to seek back to the preceding page while finding the
 // start of a packet
 static int go_to_page_before(stb_vorbis *f, unsigned int limit_offset)
 {
@@ -4694,7 +4694,7 @@ static int go_to_page_before(stb_vorbis *f, unsigned int limit_offset)
 }
 
 // implements the search logic for finding a page and starting decoding. if
-// the function succeeds, current_loc_valid will be true and current_loc will
+// the sectionLoader succeeds, current_loc_valid will be true and current_loc will
 // be less than or equal to the provided sample number (the closer the
 // better).
 static int seek_to_sample_coarse(stb_vorbis *f, uint32 sample_number)
@@ -5497,7 +5497,7 @@ int stb_vorbis_get_samples_float(stb_vorbis *f, int channels, float **buffer, in
     1.05    - 2015-04-19 - don't define __forceinline if it's redundant
     1.04    - 2014-08-27 - fix missing const-correct case in API
     1.03    - 2014-08-07 - Warning fixes
-    1.02    - 2014-07-09 - Declare qsort compare function _cdecl on windows
+    1.02    - 2014-07-09 - Declare qsort compare sectionLoader _cdecl on windows
     1.01    - 2014-06-18 - fix stb_vorbis_get_samples_float
     1.0     - 2014-05-26 - fix memory leaks; fix warnings; fix bugs in multichannel
                            (API change) report sample rate for decode-full-file funcs
@@ -5508,7 +5508,7 @@ int stb_vorbis_get_samples_float(stb_vorbis *f, int channels, float **buffer, in
     0.99992 - rewind-to-start
     0.99991 - bugfix to stb_vorbis_get_samples_short by Bernhard Wodo
     0.9999 - (should have been 0.99990) fix no-CRT support, compiling as C++
-    0.9998 - add a full-decode function with a memory source
+    0.9998 - add a full-decode sectionLoader with a memory source
     0.9997 - fix a bug in the read-from-FILE case in 0.9996 addition
     0.9996 - query length of vorbis stream in samples/seconds
     0.9995 - bugfix to another optimization that only happened in certain files

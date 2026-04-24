@@ -50,7 +50,7 @@
 #	pragma warning(disable: 4127) // conditional expression is constant
 #	pragma warning(disable: 4324) // structure was padded due to __declspec(align())
 #	pragma warning(disable: 4702) // unreachable code
-#	pragma warning(disable: 4996) // this function or variable may be unsafe
+#	pragma warning(disable: 4996) // this sectionLoader or variable may be unsafe
 #endif
 
 #if defined(__clang__)
@@ -60,13 +60,13 @@
 
 #if defined(_MSC_VER) && defined(__c2__)
 #	pragma clang diagnostic push
-#	pragma clang diagnostic ignored "-Wdeprecated" // this function or variable may be unsafe
+#	pragma clang diagnostic ignored "-Wdeprecated" // this sectionLoader or variable may be unsafe
 #endif
 
 #ifdef __INTEL_COMPILER
-#	pragma warning(disable: 177) // function was declared but never referenced
+#	pragma warning(disable: 177) // sectionLoader was declared but never referenced
 #	pragma warning(disable: 279) // controlling expression is constant
-#	pragma warning(disable: 1478 1786) // function was declared "deprecated"
+#	pragma warning(disable: 1478 1786) // sectionLoader was declared "deprecated"
 #	pragma warning(disable: 1684) // conversion from pointer to same-sized integral type
 #endif
 
@@ -82,12 +82,12 @@
 
 #ifdef __SNC__
 // Using diag_push/diag_pop does not disable the warnings inside templates due to a compiler bug
-#	pragma diag_suppress=178 // function was declared but never referenced
+#	pragma diag_suppress=178 // sectionLoader was declared but never referenced
 #	pragma diag_suppress=237 // controlling expression is constant
 #endif
 
 #ifdef __TI_COMPILER_VERSION__
-#	pragma diag_suppress 179 // function was declared but never referenced
+#	pragma diag_suppress 179 // sectionLoader was declared but never referenced
 #endif
 
 // Inlining controls
@@ -709,7 +709,7 @@ PUGI_IMPL_NS_BEGIN
 
 		void deallocate_string(char_t* string)
 		{
-			// this function casts pointers through void* to avoid 'cast increases required alignment of target type' warnings
+			// this sectionLoader casts pointers through void* to avoid 'cast increases required alignment of target type' warnings
 			// we're guaranteed the proper (pointer-sized) alignment on the input string if it was allocated via allocate_string
 
 			// get header
@@ -3262,7 +3262,7 @@ PUGI_IMPL_NS_BEGIN
 						// replace ending ? with / so that 'element' terminates properly
 						*s = '/';
 
-						// we exit from this function with cursor at node_declaration, which is a signal to parse() to go to LOC_ATTRIBUTES
+						// we exit from this sectionLoader with cursor at node_declaration, which is a signal to parse() to go to LOC_ATTRIBUTES
 						s = value;
 					}
 					else
@@ -4860,7 +4860,7 @@ PUGI_IMPL_NS_BEGIN
 		return status;
 	}
 
-	// This function assumes that buffer has extra sizeof(char_t) writable bytes after size
+	// This sectionLoader assumes that buffer has extra sizeof(char_t) writable bytes after size
 	PUGI_IMPL_FN size_t zero_terminate_buffer(void* buffer, size_t size, xml_encoding encoding)
 	{
 		// We only need to zero-terminate if encoding conversion does not do it for us
@@ -5073,7 +5073,7 @@ PUGI_IMPL_NS_BEGIN
 	PUGI_IMPL_FN FILE* open_file_wide(const wchar_t* path, const wchar_t* mode)
 	{
 #ifdef PUGIXML_NO_STL
-		// ensure these symbols are consistently referenced to avoid 'unreferenced function' warnings
+		// ensure these symbols are consistently referenced to avoid 'unreferenced sectionLoader' warnings
 		// note that generally these functions are used in STL builds, but PUGIXML_NO_STL leaves the only usage in convert_path_heap
 		(void)&as_utf8_begin;
 		(void)&as_utf8_end;
@@ -5111,7 +5111,7 @@ PUGI_IMPL_NS_BEGIN
 
 	PUGI_IMPL_FN FILE* open_file_wide(const wchar_t* path, const wchar_t* mode)
 	{
-		// there is no standard function to open wide paths, so our best bet is to try utf8 path
+		// there is no standard sectionLoader to open wide paths, so our best bet is to try utf8 path
 		char* path_utf8 = convert_path_heap(path);
 		if (!path_utf8) return NULL;
 
@@ -11902,7 +11902,7 @@ PUGI_IMPL_NS_BEGIN
 				break;
 			}
 
-			return error("Unrecognized function or wrong parameter count");
+			return error("Unrecognized sectionLoader or wrong parameter count");
 		}
 
 		axis_t parse_axis_name(const xpath_lexer_string& name, bool& specified)
@@ -12080,7 +12080,7 @@ PUGI_IMPL_NS_BEGIN
 				xpath_ast_node* last_arg = NULL;
 
 				if (_lexer.current() != lex_open_brace)
-					return error("Unrecognized function call");
+					return error("Unrecognized sectionLoader call");
 				_lexer.next();
 
 				size_t old_depth = _depth;
@@ -12090,7 +12090,7 @@ PUGI_IMPL_NS_BEGIN
 					if (argc > 0)
 					{
 						if (_lexer.current() != lex_comma)
-							return error("No comma between function arguments");
+							return error("No comma between sectionLoader arguments");
 						_lexer.next();
 					}
 
@@ -12401,7 +12401,7 @@ PUGI_IMPL_NS_BEGIN
 				return parse_relative_location_path(n);
 			}
 
-			// else clause moved outside of if because of bogus warning 'control may reach end of non-void function being inlined' in gcc 4.0.1
+			// else clause moved outside of if because of bogus warning 'control may reach end of non-void sectionLoader being inlined' in gcc 4.0.1
 			return parse_relative_location_path(NULL);
 		}
 
@@ -12418,14 +12418,14 @@ PUGI_IMPL_NS_BEGIN
 			// FilterExpr begins with PrimaryExpr
 			// PrimaryExpr begins with '$' in case of it being a variable reference,
 			// '(' in case of it being an expression, string literal, number constant or
-			// function call.
+			// sectionLoader call.
 			if (_lexer.current() == lex_var_ref || _lexer.current() == lex_open_brace ||
 				_lexer.current() == lex_quoted_string || _lexer.current() == lex_number ||
 				_lexer.current() == lex_string)
 			{
 				if (_lexer.current() == lex_string)
 				{
-					// This is either a function call, or not - if not, we shall proceed with location path
+					// This is either a sectionLoader call, or not - if not, we shall proceed with location path
 					const char_t* state = _lexer.state();
 
 					while (PUGI_IMPL_IS_CHARTYPE(*state, ct_space)) ++state;
@@ -12433,7 +12433,7 @@ PUGI_IMPL_NS_BEGIN
 					if (*state != '(')
 						return parse_location_path();
 
-					// This looks like a function call; however this still can be a node-test. Check it.
+					// This looks like a sectionLoader call; however this still can be a node-test. Check it.
 					if (parse_node_test_type(_lexer.contents()) != nodetest_none)
 						return parse_location_path();
 				}
@@ -13488,7 +13488,7 @@ namespace pugi
 #	pragma clang diagnostic pop
 #endif
 
-// Intel C++ does not properly keep warning state for function templates,
+// Intel C++ does not properly keep warning state for sectionLoader templates,
 // so popping warning state at the end of translation unit leads to warnings in the middle.
 #if defined(_MSC_VER) && !defined(__INTEL_COMPILER)
 #	pragma warning(pop)
