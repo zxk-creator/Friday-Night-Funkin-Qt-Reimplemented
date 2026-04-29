@@ -10,8 +10,17 @@ class FunkinSoundSystem : public QObject
 {
 	Q_OBJECT
 
+private:
+	static FunkinSoundSystem* f_instance;
+
 public:
 	explicit FunkinSoundSystem(QObject *parent = nullptr);
+
+	static FunkinSoundSystem* instance()
+	{
+		if (!f_instance) f_instance = new FunkinSoundSystem();
+		return f_instance;
+	}
 
 	// 必须先初始化Save，再初始化子系统，否则崩溃！！！！！
 private:

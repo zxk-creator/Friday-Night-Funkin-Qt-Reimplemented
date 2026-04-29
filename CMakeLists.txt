@@ -23,9 +23,7 @@ set(PROJECT_SOURCES
         src/include/audio/SoundEnum.h
         src/include/save/Save.h
         src/include/save/SaveSystem.h
-        src/include/ui/buttons/FButton.h        
         src/include/utils/GlobalSystemUtils.h
-        src/include/utils/InstanceLibrary.h
         src/include/utils/Math.h
         src/include/utils/Path.h
         src/src/audio/FunkinSoundSystem.cpp
@@ -38,7 +36,6 @@ set(PROJECT_SOURCES
         src/include/utils/modding/ModScanUtils.h
         src/src/utils/modding/ModScanUtils.cpp
         src/include/utils/lang/LangStringPool.h
-        src/src/utils/InstanceLibrary.cpp
         src/src/utils/modding/GlobalSystemUtils.cpp
         src/src/modding/scan/ModManager.cpp
         src/src/modding/modmetadata/ModMetadata.cpp
@@ -57,6 +54,14 @@ set(PROJECT_SOURCES
         src/src/utils/exception/CustomException.cpp
         src/src/data/level/LevelData.cpp
         src/src/utils/file/FileUtil.h
+        src/include/data/song/SongRegistry.h
+        src/include/play/song/Song.h
+        src/include/data/song/SongData.h
+        src/include/Constants.h
+        src/src/modding/modmetadata/VersonRule.cpp
+        src/src/permissions/GetAndroidStoragePermission.cpp
+        src/src/data/song/SongData.cpp
+        src/include/data/song/SongDifficulty.h
 )
 
 set(CMAKE_AUTORCC ON)

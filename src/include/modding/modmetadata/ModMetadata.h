@@ -39,7 +39,8 @@ struct ModMetadata
     optional<string> modVersion;
     optional<string> license;
     optional<string> iconPath;
-    optional<string> modPath;
+    // 这东西必须存在，不然还解析什么
+    string modPath;
     optional<ModDependencies> dependencies;
     optional<ModDependencies> optionalDependencies;
 

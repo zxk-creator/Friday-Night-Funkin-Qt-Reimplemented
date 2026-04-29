@@ -25,6 +25,9 @@ class ModManager : public QObject
      */
     Q_PROPERTY(bool isReady READ isReady NOTIFY onStateChanged)
 
+private:
+    static ModManager* m_instance;
+
 public:
     /**
      * 我看了半天也没看明白这到底是想干嘛
@@ -32,6 +35,12 @@ public:
      * 具体实现在.cpp文件中
     **/
     explicit ModManager(QObject *parent = nullptr);
+
+    static ModManager* instance()
+    {
+        if (!m_instance) m_instance = new ModManager();
+        return m_instance;
+    }
 
     /** 扫描路径下的模组文件！每一个文件夹都是一个潜在的“模组”对象!
       * 我们只需要扫描mods目录下的文件夹，每一个文件夹都赋予一个Mod对象并配置ModMetadata即可！

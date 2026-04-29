@@ -13,6 +13,8 @@ enum class ModParseExcpetionType
     NoFileOrDir,
     BadJSONGrammer,
     OpenFileFail,
+    GetWeekSongFailed,
+    Unkown,
 };
 
 /**
@@ -26,6 +28,7 @@ public:
     static void logParseJSONException(const QString& message, const QString& functionName, const QString& fileName, int atLine);
     static void logNullPointerException(const string& message,const string& functionName,int atLine);
     static void logParseModException(ModParseExcpetionType excpetionType,const QString& file);
+    static void logVersionInvalid(const string& versionProvided,const string& versionNeeded,const string& fileName);
 };
 
 // 自动获取函数名和行号，使用的时候直接LOG_JSON_PARSE_ERROR(msg,filename)这两个msg和filename替换一下即可

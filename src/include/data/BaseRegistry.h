@@ -26,20 +26,11 @@ class BaseRegistry
 {
 public:
 
-    BaseRegistry(EntryType type,const string& version)
-    {
-        this->thisEntryType = type;
-        this->thisRequiredVersion = !VersionUtil::isValidSemVer(version) ? "1.0.x" : version;
-    }
-
     EntryType thisEntryType = EntryType::level;
 
     string thisRequiredVersion;
 
     // TODO: 这个还支持脚本化的entry，我这边由于没有解释器所以暂不支持。
     // 先仅支持数据化配置的entry
-    int countEntries()
-    {
-        return entries.size();
-    }
+
 };

@@ -49,6 +49,11 @@ void Exception::logParseModException(ModParseExcpetionType excpetionType, const 
             message = "文件打开失败：" + file;
             break;
         }
+    case ModParseExcpetionType::GetWeekSongFailed:
+        {
+            message = "尝试从周配置信息读取歌曲时失败。文件：" + file;
+            break;
+        }
         default:
         {
             message = "模组解析失败: 未知错误" + file;
@@ -57,4 +62,10 @@ void Exception::logParseModException(ModParseExcpetionType excpetionType, const 
     }
 
     qCritical() << message;
+}
+
+void Exception::logVersionInvalid(const string& versionProvided, const string& versionNeeded, const string& fileName)
+{
+    string message = "模组版本不匹配，需要" + versionProvided + "，却提供了: " + versionNeeded + "。在文件: " + fileName;
+    qCritical() << QString::fromStdString(message);
 }

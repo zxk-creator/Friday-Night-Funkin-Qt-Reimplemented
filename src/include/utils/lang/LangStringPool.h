@@ -10,7 +10,15 @@ class LangStringPool : public QObject
 {
     Q_OBJECT
 
+private:
+    static LangStringPool* langStringPool;
+
 public:
+    static LangStringPool* instance()
+    {
+        if (!langStringPool) langStringPool = new LangStringPool();
+        return langStringPool;
+    }
     // 调试相关
     QString PEMod() const { return tr("PE模组"); }
     QString errWhenParse() const { return tr("无法解析PE模组"); }

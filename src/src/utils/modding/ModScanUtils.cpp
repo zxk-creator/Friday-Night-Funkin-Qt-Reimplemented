@@ -6,6 +6,9 @@
 #include "utils/InstanceLibrary.h"
 #include "utils/exception/CustomException.h"
 #include "data/level/LevelData.h"
+#include "utils/VersionUtil.h"
+#include "data/level/LevelRegistry.h"
+#include "data/song/SongData.h"
 #include "src/src/utils/file/FileUtil.h"
 
 using Lang = InstanceLibrary;
@@ -208,34 +211,30 @@ optional<ModMetadata> ModScanUtils::scanVSModMetadata(QString& modAbsolutePath)
     }
 }
 
-void ModScanUtils::scanAllMods(QString& modAbsolutePath)
+void ModScanUtils::scanAllMods(const QVector<ModMetadata>& modMetadatas)
 {
-    // 按顺序来，不能错！
-    if (parseWeeks(modAbsolutePath))
-        qWarning() << "解析 " << modAbsolutePath << "的levels的时候出现问题\n已跳过";
+    for (auto& entry : modMetadatas)
+    {
+        string levelName;
+        // 按顺序来，不能错！
+        if (parseWeeks(entry))
+            qWarning() << "解析 " << QString::fromStdString(entry.modPath) << "的levels的时候出现问题\n已跳过";
 
-    parseSongs(modAbsolutePath);
-    parseCharacters(modAbsolutePath);
-    parseStages(modAbsolutePath);
+        parseSongs(entry);
+        parseCharacters(entry);
+        parseStages(entry);
+    }
 }
 
-bool ModScanUtils::parseWeeks(QString& modAbsolutePath)
+bool ModScanUtils::parseWeeks(const ModMetadata& modMetadata)
 {
-    QString finalLevelDirPath = modAbsolutePath + QDir::separator() + "data" + QDir::separator() + "levels";
-    QDir levelDir = finalLevelDirPath;
-    if (!levelDir.exists())
-    {
-        Exception::logParseModException(ModParseExcpetionType::NoFileOrDir,modAbsolutePath);
-        return false;
-    }
-    
-    QStringList filter;
-    filter << "*.json";
-    levelDir.setNameFilters(filter);
+    string modAbsolutePath = modMetadata.modPath;
+    QString finalLevelDirPath = QDir::cleanPath(QString::fromStdString(modAbsolutePath) + QDir::separator() + "data" + QDir::separator() + "levels");
 
-    QStringList jsonFiles = levelDir.entryList(QDir::Files);
+    optional<QStringList> jsonFiles = FileUtil::validateAndGetFileNamesInDir(finalLevelDirPath,"*.json");
+    if (!jsonFiles.has_value()) return false;
 
-    foreach(const QString& fileName, jsonFiles)
+    foreach(const QString& fileName, jsonFiles.value())
     {
         QString oneJSONFile = finalLevelDirPath + QDir::separator() + fileName;
         // 直接开始解析json
@@ -243,26 +242,82 @@ bool ModScanUtils::parseWeeks(QString& modAbsolutePath)
 
         // 由于我们已经写好了from_json函数，因此可以直接获取！
         json j = nlohmann::json::parse(content.toStdString());
-        LevelData levelData = j.get<LevelData>();
+        LevelData levelData;
+        LevelData_from_json_VS(j,levelData);
+        LevelRegistry::addAvailableWeeks(levelData,QString::fromStdString(modAbsolutePath));
+    }
+
+    return true;
+}
+
+bool ModScanUtils::parseCharacters(const ModMetadata& modMetadata)
+{
+
+}
+
+bool ModScanUtils::parseSongs(const ModMetadata& modMetadata)
+{
+    QString modAbsolutePath = QString::fromStdString(modMetadata.modPath);
+    // 接下来我们就得去songs目录下去找json了
+    QString songsRootPath = QDir::cleanPath(modAbsolutePath + QDir::separator() + "data" + QDir::separator() + "songs");
+    QDir dir(songsRootPath);
+    QStringList songsSubFolders = dir.entryList(QDir::Dirs | QDir::NoDotAndDotDot);
+    for (const QString& songIdAndFolderName : songsSubFolders) {
+        QString oneSongFolderPath = songsRootPath + QDir::separator() + songIdAndFolderName;
+
+        optional<QStringList> songMetaFileNames = FileUtil::validateAndGetFileNamesInDir(oneSongFolderPath,"*-metadata.json");
+        if (!songMetaFileNames.has_value()) continue;
+
+        /**
+         * 这遍历的是元数据文件,先遍历元数据，再按需加载歌曲
+         */
+        foreach(const QString& filename,songMetaFileNames.value())
+        {
+            /**
+              * 获得歌曲文件夹名字后，进入才能看到铺面和metadata。
+              * 这里需要注意的是: 有些歌比如erect和nightmare难度是不会出现在storymenu里面的
+              * 什么意思？data/song目录下的每个json，并不是每个都出现在storymenu里面的
+              * 所以我们需要分别注册level，把歌注册到level对象里面一个level对象只包含他在json里面声明的那几首歌
+              * 但是为那些隐藏的也得new Song对象出来，方便后续在freeplay里面显示
+              * 模组详情界面也要显示！即便是他隐藏了
+              * 注：erect和nightmare，pico是变体，需要特殊处理，根据源码，他不和storymenu（LEVEL对象）里面的简单普通困难一块出现。
+              * erect都有自己的专属铺面，使用方式为 原铺面-erect.json
+              * 还有可玩角色-pico.json，也是一种变体，和bf，erect同级，只出现在freeplay里面
+              * 经过研究：storymenu只有简单普通困难三个选项，erect和nightmare需要单独声明
+              * 当选择的角色是pico或pico-playable的时候，才会出现在pico的freeplay里面。
+              * 当歌曲difficulties数组支持erect和nightmare的时候，才会出现在erect和nightmare选项里面。
+              * 关键字段：
+              * "songVariations": ["bf", "erect"]
+              * "difficulties": ["easy", "normal", "hard"]
+              * "player": "pico-playable"
+              * 这就是一个pico专属歌，难度有erect，变体是bf，具体定义在"歌曲名-bf.json中"
+              * 不带后缀的都是普通变体，优先加载的是他们。
+             */
+            // 总之，我们要根据这个获得Song对象！
+            // 另外，Metadata对象存储在每一个Song对象里面！
+            // 首先解析的是metadata文件！
+            QString thisJsonFilePath = oneSongFolderPath + QDir::separator() + filename;
+            try {
+                json j = json::parse(FileUtil::ReadFileToString(thisJsonFilePath.toStdString()));
+                optional<SongMetaData> _metadata = SongDataParser::parseSongMetaData(j,filename.toStdString());
+
+
+            }
+            catch (const json::parse_error& e)
+            {
+                LOG_JSON_PARSE_ERROR(e.what(),filename);
+                continue;
+            }
+        }
     }
 }
 
-bool ModScanUtils::parseCharacters(QString& modAbsolutePath)
+bool ModScanUtils::parseStages(const ModMetadata& modMetadata)
 {
 
 }
 
-bool ModScanUtils::parseSongs(QString& modAbsolutePath)
-{
-
-}
-
-bool ModScanUtils::parseStages(QString& modAbsolutePath)
-{
-
-}
-
-bool ModScanUtils::parseNotestyles(QString& modAbsolutePath)
+bool ModScanUtils::parseNotestyles(const ModMetadata& modMetadata)
 {
 
 }

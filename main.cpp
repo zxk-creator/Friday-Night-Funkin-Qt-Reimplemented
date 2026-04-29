@@ -2,7 +2,9 @@
 #include <QQmlContext>
 #include <QGuiApplication>
 #include <audio/FunkinSound.h>
-#include <utils/InstanceLibrary.h>
+
+#include "audio/FunkinSoundSystem.h"
+#include "modding/scan/ModManager.h"
 
 #ifdef Q_OS_ANDROID
 #include "permissions/GetAndroidStoragePermission.h"
@@ -11,8 +13,8 @@
 // 暴露C++函数给QML调用
 inline void initQmlEngine(QQmlApplicationEngine &engine)
 {
-    engine.rootContext()->setContextProperty("SoundSystem",InstanceLibrary::funkinSoundSystem);
-    engine.rootContext()->setContextProperty("ModManager",InstanceLibrary::modManager);
+    engine.rootContext()->setContextProperty("SoundSystem",FunkinSoundSystem::instance());
+    engine.rootContext()->setContextProperty("ModManager",ModManager::instance());
     // 以后注册点别的
 }
 
@@ -26,6 +28,8 @@ void requestAndroidPermission()
 
 int main(int argc, char *argv[])
 {
+    // printf("Hello World!");
+
 #if defined(Q_OS_WIN) && QT_VERSION_CHECK(5, 6, 0) <= QT_VERSION && QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
     QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
 #endif
@@ -34,8 +38,6 @@ int main(int argc, char *argv[])
     QGuiApplication app(argc, argv);
     app.setWindowIcon(QIcon(":/qt/qml/fnf/BF.ico"));
 
-    // 初始化子系统
-    InstanceLibrary::initSubSystems();
     #ifdef Q_OS_ANDROID
     // 检查管理所有文件权限是否已get
     requestAndroidPermission();
