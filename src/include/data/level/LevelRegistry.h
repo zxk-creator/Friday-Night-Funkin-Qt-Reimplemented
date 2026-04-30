@@ -56,5 +56,5 @@ private:
      * 此条目也适用于storymenu内容的显示
      * @param string: 周名称(ID)。LevelData，实际存储的周配置数据
      */
-    static std::unordered_map<string,LevelData> entries;
+    static inline std::unordered_map<string,LevelData> entries;
 };

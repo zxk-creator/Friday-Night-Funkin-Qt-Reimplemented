@@ -8,9 +8,10 @@
 #include <optional>
 #include <vector>
 #include <string>
-#include <map>
-#include <fstream>
+#include <unordered_map>
+#include <memory>
 #include <iostream>
+#include <mutex>
 
 #include "Constants.h"
 #include "semver/semver.h"
@@ -38,9 +39,9 @@ struct SongTimeChange {
 
 struct SongOffsets {
     double instrumental = 0.0;
-    std::map<std::string, double> altInstrumentals;
-    std::map<std::string, double> vocals;
-    std::map<std::string, std::map<std::string, double>> altVocals;
+    std::unordered_map<std::string, double> altInstrumentals;
+    std::unordered_map<std::string, double> vocals;
+    std::unordered_map<std::string, std::unordered_map<std::string, double>> altVocals;
 
     double getInstrumentalOffset(const std::string& instrumentalId = "") const {
         if (instrumentalId.empty()) return instrumental;
@@ -66,8 +67,12 @@ struct SongCharacterData {
     std::string girlfriend = "gf";
     std::string opponent = "dad";
     std::string instrumental = "";
+    // 所谓“替代伴奏”到底是什么意思
+    // 我认为特可能是为erect什么准备的，不知道，有人反馈了再说吧
     std::vector<std::string> altInstrumentals;
+    // 据说这个数组里面的音效会同时播放
     std::vector<std::string> opponentVocals;
+    // 也会同时播放
     std::vector<std::string> playerVocals;
 
     SongCharacterData() = default;
@@ -75,6 +80,30 @@ struct SongCharacterData {
         : player(p), girlfriend(gf), opponent(opp) {}
 };
 
+/**
+ * 形如
+* "playData": {
+    "songVariations": ["pico"],
+    "difficulties": [
+      "easy",
+      "normal",
+      "hard"
+    ],
+    "characters": {
+      "player": "bf-redux",
+      "girlfriend": "gf-redux",
+      "opponent": "modsky-annoyed",
+      "instrumental": "",
+      "altInstrumentals": [      ],
+      "opponentVocals": [
+        "sky"
+      ],
+      "playerVocals": [
+        "bf"
+      ]
+    }
+ * 就叫playData，包含了难度数据（只有字符串）
+ */
 struct SongPlayData {
     // 传说中的变体，-erect，-pico等
     std::vector<std::string> songVariations;
@@ -82,13 +111,16 @@ struct SongPlayData {
     SongCharacterData characters;
     std::string stage = "mainStage";
     std::string noteStyle = "funkin";
-    std::map<std::string, int> ratings;
+    std::unordered_map<std::string, int> ratings;
     std::optional<std::string> album;
     std::optional<std::string> stickerPack;
     int previewStart = 0;
     int previewEnd = 15000;
 };
 
+/**
+ * 包含PlayData，CharacterData（定义对手，玩家，女朋友是谁），Offsets等
+ */
 struct SongMetaData {
     std::string version = "2.2.4";
     std::string songName = "Unknown";
@@ -120,7 +152,7 @@ struct SongMetadata_v2_0_0 {
     SongCharacterData characters;
     std::string stage = "mainStage";
     std::string noteStyle = "funkin";
-    std::map<std::string, int> ratings;
+    std::unordered_map<std::string, int> ratings;
 
     std::string generatedBy;
     SongTimeFormat timeFormat = SongTimeFormat::MILLISECONDS;
@@ -144,9 +176,20 @@ struct SongMetadata_v2_1_0 {
 
 struct NoteParamData {
     std::string name;
+    // value: Dynamic
     json value;
 };
 
+/**
+ * 什么叫NoteData，比如一个
+ * {
+        "t": 48900,
+        "d": 5,
+        "l": 225,
+        "p": [        ]
+      },
+ * 就叫notedata，专门记录这个箭头方向和类型的
+ */
 struct SongNoteData {
     double time = 0.0;
     int data = 0;
@@ -155,19 +198,76 @@ struct SongNoteData {
     std::vector<NoteParamData> params;
 };
 
+/**
+ * {
+      "t": 4800,
+      "e": "FocusCamera",
+      "v": {
+    "duration": 4,
+    "x": 0,
+    "y": 0,
+    "char": 1,
+    "ease": "CLASSIC"
+   }
+ * 全局唯一，整个铺面都用这一个事件，不区分难度。
+ */
 struct SongEventData {
     double time = 0.0;
     std::string eventKind;
     json value;
 };
 
+/**
+ * 用于存储一首歌箭头数据的包装结构，里面自带了他所有的难度！您无需在外部在搞个映射
+ * 每一个difficulty（作为值）应该和difficultyId（字符串）（作为键）unordered_map里面！
+ * 不过不太理解的是，为何还要设计一个包装类包装一下chartData，直接字符串对应不是更清晰么？
+ * 可能的原因：和json字段一块对应
+* "easy": [
+      {
+        "t": 300,
+        "d": 4,
+        "l": 225,
+        "p": [        ]
+      },
+      {
+        "t": 600,
+        "d": 5,
+        "l": 0,
+        "p": [        ]
+      },
+    ]
+ * 就像这样，开头是一个easy数组。
+ * 那么我们这个结构就是专门存这个的
+ * 不过为什么我不直接用map呢，非得包装一下...
+ * 算了就当简化代码
+ */
+struct SongDifficulty {
+    /**
+     * {难度ID, 铺面数据}
+     * 什么！你说有些模组故意没有NoteData?
+     * 那还玩个蛋，不玩了
+     */
+    std::unordered_map<string, std::vector<SongNoteData>> notes;
+
+    // 默认构造函数用于默认拷贝（比如访问某个成员发生拷贝）
+    SongDifficulty() = default;
+};
+
+/**
+ * 什么叫ChartData，比如sky-chart.json，这一整个文件内容就是ChartData。
+ * 每一个变体都有他自己的铺面文件
+ * 他里面存储了完整的铺面数据（通过notes成员）和难度对应关系
+ * 甭管原版是怎么设计的，我就这样设计的。
+ */
 struct SongChartData {
     std::string version;
-    std::map<std::string, std::vector<SongNoteData>> notes; // 键值对 难度 ： 音符数组
+    // 对应json的"easy""normal""hard"等字段
+    SongDifficulty difficulties;
+    // 对应event数组
     std::vector<SongEventData> events;                      // 事件数组
-    std::map<std::string, double> scrollSpeed;              //键值对 难度 : 滚动速度
+    std::unordered_map<std::string, double> scrollSpeed;              // 键值对 难度 : 滚动速度
     std::string generatedBy;
-    std::string variation;                                  // 变体(用于存储到difficulties数组，不参与json序列化反序列化)
+    std::string variation;
 };
 
 // NoteParamData 的 from_json
@@ -219,10 +319,11 @@ inline void from_json(const json& j, SongChartData& chart) {
     }
 
     // notes: Map<String, Array<SongNoteData>>
+    // 我们也不用手动操作Difficulty结构了，直接一键解析完成了
     if (j.contains("notes") && j["notes"].is_object()) {
         for (auto& [difficulty, notesArray] : j["notes"].items()) {
             if (notesArray.is_array()) {
-                chart.notes[difficulty] = notesArray.get<std::vector<SongNoteData>>();
+                chart.difficulties.notes[difficulty] = notesArray.get<std::vector<SongNoteData>>();
             }
         }
     }
@@ -376,7 +477,7 @@ class SongDataParser {
     }
 
 public:
-    // 外部只需要调用这个就可以直接解析！
+    // 外部只需要调用这个就可以直接解析！（返回值是optional的都自带记录错误，因此你无需再log异常）
     static std::optional<SongMetaData> parseSongMetaData(const json& j, const std::string& filename = "") {
         semver::version current_version;
         std::string versionStr = "2.2.4";
@@ -419,7 +520,7 @@ public:
         }
     }
 
-    // 目前还没有看到和版本号有关的迁移内容，因此我推断他应该没有太大的变动
+    // 目前还没有看到和版本号有关的迁移内容，因此我推断他应该没有太大的变动，因此不提供迁移逻辑
     static SongChartData parseSongChartData(const json& j, const std::string& filename = "")
     {
         SongChartData s;

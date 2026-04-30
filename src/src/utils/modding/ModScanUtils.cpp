@@ -3,15 +3,18 @@
 //
 #include "utils/modding/ModScanUtils.h"
 #include "../thirdParty/nlohmann/json.hpp"
-#include "utils/InstanceLibrary.h"
 #include "utils/exception/CustomException.h"
 #include "data/level/LevelData.h"
 #include "utils/VersionUtil.h"
 #include "data/level/LevelRegistry.h"
 #include "data/song/SongData.h"
+#include "play/song/Song.h"
 #include "src/src/utils/file/FileUtil.h"
+#include "utils/Path.h"
+#include "utils/lang/LangStringPool.h"
 
-using Lang = InstanceLibrary;
+using std::unordered_map;
+using std::unique_ptr;
 
 ModEngineType ModScanUtils::judgeModEngine(const QString& modAbsolutePath)
 {
@@ -64,8 +67,8 @@ optional<ModMetadata> ModScanUtils::scanPEModMetadata(QString& modAbsolutePath)
         string rawJSON = cfgFile.readAll().toStdString();
         // 忽略注释和多余逗号
         auto j = nlohmann::json::parse(rawJSON,nullptr,true,true);
-        modMetadata.title = j.value("name", Lang::langStringPool->untitledMod().toStdString());
-        modMetadata.description = j.value("description", Lang::langStringPool->noDescription().toStdString());
+        modMetadata.title = j.value("name", LangStringPool::instance()->untitledMod().toStdString());
+        modMetadata.description = j.value("description", LangStringPool::instance()->noDescription().toStdString());
         modMetadata.restart = j.value("restart", false);
         modMetadata.runsGlobally = j.value("runsGlobally", false);
         modMetadata.bgRGBColor = j.value<optional<vector<int>>>("color",nullopt);
@@ -118,8 +121,8 @@ optional<ModMetadata> ModScanUtils::scanVSModMetadata(QString& modAbsolutePath)
     try {
         string rawJSON = cfgFile.readAll().toStdString();
         auto j = nlohmann::json::parse(rawJSON,nullptr,true,true);
-        modMetadata.title = j.value("title",Lang::langStringPool->untitledMod().toStdString());
-        modMetadata.description = j.value("description",Lang::langStringPool->noDescription().toStdString());
+        modMetadata.title = j.value("title",LangStringPool::instance()->untitledMod().toStdString());
+        modMetadata.description = j.value("description",LangStringPool::instance()->noDescription().toStdString());
         modMetadata.homepage = j.value<optional<string>>("homepage",nullopt);
         modMetadata.apiVersion = j.value<optional<string>>("api_version",nullopt);
         if (modMetadata.apiVersion.has_value())
@@ -229,7 +232,7 @@ void ModScanUtils::scanAllMods(const QVector<ModMetadata>& modMetadatas)
 bool ModScanUtils::parseWeeks(const ModMetadata& modMetadata)
 {
     string modAbsolutePath = modMetadata.modPath;
-    QString finalLevelDirPath = QDir::cleanPath(QString::fromStdString(modAbsolutePath) + QDir::separator() + "data" + QDir::separator() + "levels");
+    QString finalLevelDirPath = Path::getVSDataPath(ResourceType::levels,QString::fromStdString(modAbsolutePath));
 
     optional<QStringList> jsonFiles = FileUtil::validateAndGetFileNamesInDir(finalLevelDirPath,"*.json");
     if (!jsonFiles.has_value()) return false;
@@ -259,55 +262,91 @@ bool ModScanUtils::parseSongs(const ModMetadata& modMetadata)
 {
     QString modAbsolutePath = QString::fromStdString(modMetadata.modPath);
     // 接下来我们就得去songs目录下去找json了
-    QString songsRootPath = QDir::cleanPath(modAbsolutePath + QDir::separator() + "data" + QDir::separator() + "songs");
+    QString songsRootPath = Path::getVSDataPath(ResourceType::songs, modAbsolutePath);
     QDir dir(songsRootPath);
     QStringList songsSubFolders = dir.entryList(QDir::Dirs | QDir::NoDotAndDotDot);
+
     for (const QString& songIdAndFolderName : songsSubFolders) {
-        QString oneSongFolderPath = songsRootPath + QDir::separator() + songIdAndFolderName;
-
-        optional<QStringList> songMetaFileNames = FileUtil::validateAndGetFileNamesInDir(oneSongFolderPath,"*-metadata.json");
-        if (!songMetaFileNames.has_value()) continue;
-
+        QString thisSongFolderPath = songsRootPath + QDir::separator() + songIdAndFolderName;
+        QString defaultSongMetaFilePath = FileUtil::getDefaultSongMetaFilePath(thisSongFolderPath);
         /**
-         * 这遍历的是元数据文件,先遍历元数据，再按需加载歌曲
+          * 获得歌曲文件夹名字后，进入才能看到铺面和metadata。
+          * 这里需要注意的是: 有些歌比如erect和nightmare难度是不会出现在storymenu里面的
+          * 什么意思？data/song目录下的每个json，并不是每个都出现在storymenu里面的
+          * 所以我们需要分别注册level，把歌注册到level对象里面一个level对象只包含他在json里面声明的那几首歌
+          * 但是为那些隐藏的也得new Song对象出来，方便后续在freeplay里面显示
+          * 模组详情界面也要显示！即便是他隐藏了
+          * 注：erect和nightmare，pico是变体，需要特殊处理，根据源码，他不和storymenu（LEVEL对象）里面的简单普通困难一块出现。
+          * erect都有自己的专属铺面，使用方式为 原铺面-erect.json
+          * 还有可玩角色-pico.json，也是一种变体，和bf，erect同级，只出现在freeplay里面
+          * 经过研究：storymenu只有简单普通困难三个选项，erect和nightmare需要单独声明
+          * 当选择的角色是pico或pico-playable的时候，才会出现在pico的freeplay里面。
+          * 当歌曲difficulties数组支持erect和nightmare的时候，才会出现在erect和nightmare选项里面。
+          * 关键字段：
+          * "songVariations": ["bf", "erect"]
+          * "difficulties": ["easy", "normal", "hard"]
+          * "player": "pico-playable"
+          * 这就是一个pico专属歌，难度有erect，变体是bf，具体定义在"歌曲名-bf.json中"
+          * 不带后缀的都是普通变体，优先加载的是他们。
          */
-        foreach(const QString& filename,songMetaFileNames.value())
-        {
-            /**
-              * 获得歌曲文件夹名字后，进入才能看到铺面和metadata。
-              * 这里需要注意的是: 有些歌比如erect和nightmare难度是不会出现在storymenu里面的
-              * 什么意思？data/song目录下的每个json，并不是每个都出现在storymenu里面的
-              * 所以我们需要分别注册level，把歌注册到level对象里面一个level对象只包含他在json里面声明的那几首歌
-              * 但是为那些隐藏的也得new Song对象出来，方便后续在freeplay里面显示
-              * 模组详情界面也要显示！即便是他隐藏了
-              * 注：erect和nightmare，pico是变体，需要特殊处理，根据源码，他不和storymenu（LEVEL对象）里面的简单普通困难一块出现。
-              * erect都有自己的专属铺面，使用方式为 原铺面-erect.json
-              * 还有可玩角色-pico.json，也是一种变体，和bf，erect同级，只出现在freeplay里面
-              * 经过研究：storymenu只有简单普通困难三个选项，erect和nightmare需要单独声明
-              * 当选择的角色是pico或pico-playable的时候，才会出现在pico的freeplay里面。
-              * 当歌曲difficulties数组支持erect和nightmare的时候，才会出现在erect和nightmare选项里面。
-              * 关键字段：
-              * "songVariations": ["bf", "erect"]
-              * "difficulties": ["easy", "normal", "hard"]
-              * "player": "pico-playable"
-              * 这就是一个pico专属歌，难度有erect，变体是bf，具体定义在"歌曲名-bf.json中"
-              * 不带后缀的都是普通变体，优先加载的是他们。
-             */
-            // 总之，我们要根据这个获得Song对象！
-            // 另外，Metadata对象存储在每一个Song对象里面！
-            // 首先解析的是metadata文件！
-            QString thisJsonFilePath = oneSongFolderPath + QDir::separator() + filename;
-            try {
-                json j = json::parse(FileUtil::ReadFileToString(thisJsonFilePath.toStdString()));
-                optional<SongMetaData> _metadata = SongDataParser::parseSongMetaData(j,filename.toStdString());
+        // 总之，我们要根据这个获得Song对象！
+        // 另外，Metadata对象存储在每一个Song对象里面！
+        // 首先解析的是metadata文件！
+        QString thisMetaFileName = FileUtil::getPathLeaf(defaultSongMetaFilePath);
+        QString thisChartFilePath = FileUtil::getDefaultSongChartFilePath(thisSongFolderPath);
+        try {
 
+            unordered_map<string, SongMetaData> allMetadata;
+            unordered_map<std::string, SongChartData> notes;
 
-            }
-            catch (const json::parse_error& e)
+            // 先解析普通元数据文件
+            json jMeta = json::parse(FileUtil::ReadFileToString(defaultSongMetaFilePath.toStdString()));
+            optional<SongMetaData> defaultMetadata = SongDataParser::parseSongMetaData(jMeta,thisMetaFileName.toStdString());
+            // 先解析普通铺面文件
+            json jChart = json::parse(FileUtil::ReadFileToString(thisChartFilePath).toStdString());
+            SongChartData defaultChartData = SongDataParser::parseSongChartData(jChart,thisMetaFileName.toStdString());
+
+            if (!defaultMetadata.has_value()) continue;
+            // 获得歌曲的变体名，并对其进行遍历
+            vector<string> songVariations = defaultMetadata.value().playData.songVariations;
+
+            allMetadata.insert({"default",defaultMetadata.value()});
+            notes.insert({"default",defaultChartData});
+
+            // 根据SongCharacterData, 找到对应的ogg文件
+            string playerVocalName = defaultMetadata.value().playData.characters.player;
+            string opponentVocalName = defaultMetadata.value().playData.characters.opponent;
+
+            // 遍历变体
+            for (auto& songVariationId : songVariations)
             {
-                LOG_JSON_PARSE_ERROR(e.what(),filename);
-                continue;
+                // 变体不能嵌套变体！这是代码里面硬性规定的！相信我！
+                QString thisVariationMetadataPath = FileUtil::getVariationSongMetaFilePath(thisSongFolderPath,QString::fromStdString(songVariationId));
+                QString thisVariationChartPath = FileUtil::getVariationSongChartFilePath(thisSongFolderPath,QString::fromStdString(songVariationId));
+                // erect变体只有erect或nightmare难度（目前）
+                json jvmetadata = json::parse(FileUtil::ReadFileToString(thisVariationMetadataPath.toStdString()));
+                optional<SongMetaData> variationMetadata = SongDataParser::parseSongMetaData(jvmetadata,thisVariationMetadataPath.toStdString());
+                if (!variationMetadata.has_value()) continue;
+
+                json jvChartData = json::parse(FileUtil::ReadFileToString(thisVariationChartPath.toStdString()));
+                SongChartData variationChartData = SongDataParser::parseSongChartData(jvChartData,thisVariationChartPath.toStdString());
+
+                // 存储变体与铺面
+                allMetadata.insert({songVariationId,variationMetadata.value()});
+                notes.insert({songVariationId,variationChartData});
             }
+
+            // 至此我们步入了“现代”C++，有效避免了双重释放，内存泄漏，但还是会崩溃
+            auto song = std::make_unique<Song>(songIdAndFolderName.toStdString(),allMetadata,notes);
+
+            // 至此，我们终于完成了一首歌的构造！🎉🎉🎉🎉
+            // 接下来我们要开始找真正的ogg文件
+
+        }
+        catch (const json::parse_error& e)
+        {
+            LOG_JSON_PARSE_ERROR(e.what(),thisMetaFileName);
+            continue;
         }
     }
 }

@@ -11,7 +11,7 @@ class LangStringPool : public QObject
     Q_OBJECT
 
 private:
-    static LangStringPool* langStringPool;
+    static inline LangStringPool* langStringPool;
 
 public:
     static LangStringPool* instance()

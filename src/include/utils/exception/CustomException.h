@@ -26,9 +26,12 @@ class Exception
 public:
     static void logParseJSONException(const string& message,const string& functionName,const string& fileName,int atLine);
     static void logParseJSONException(const QString& message, const QString& functionName, const QString& fileName, int atLine);
+    // 为了防止我写错逻错故意设置的自杀行为
     static void logNullPointerException(const string& message,const string& functionName,int atLine);
     static void logParseModException(ModParseExcpetionType excpetionType,const QString& file);
     static void logVersionInvalid(const string& versionProvided,const string& versionNeeded,const string& fileName);
+    // 为了防止我写错逻错故意设置的自杀行为
+    static void wrongParamException(const QString& msg,const QString& functionName, const int atLine);
 };
 
 // 自动获取函数名和行号，使用的时候直接LOG_JSON_PARSE_ERROR(msg,filename)这两个msg和filename替换一下即可
@@ -40,3 +43,5 @@ public:
 
 #define LOG_NULL_PTR_ERROR(msg) \
     Exception::logNullPointerException(msg, __FUNCTION__, __LINE__)
+
+#define LOG_WRONG_PARAM_ERROR(msg)  Exception::wrongParamException(msg, __FUNCTION__, __LINE__);

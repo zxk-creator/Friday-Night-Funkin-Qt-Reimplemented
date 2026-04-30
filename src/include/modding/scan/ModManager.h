@@ -26,7 +26,7 @@ class ModManager : public QObject
     Q_PROPERTY(bool isReady READ isReady NOTIFY onStateChanged)
 
 private:
-    static ModManager* m_instance;
+    static inline ModManager* m_instance;
 
 public:
     /**

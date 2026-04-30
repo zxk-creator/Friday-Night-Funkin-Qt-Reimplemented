@@ -7,7 +7,6 @@
 #include <qcoreapplication.h>
 #include <qstandardpaths.h>
 #include <QDirIterator>
-#include "src/include/ui/buttons/FButton.h"
 
 FunkinPath Path::getDefaultSoundPath(EDefaultSoundType soundType) {
     switch (soundType)
@@ -148,4 +147,59 @@ QVector<QString> Path::getAllModFolderPaths()
     }
 
     return res;
+}
+
+QString Path::getVSDataPath(ResourceType type, const QString& modAbsolutePath)
+{
+    QString targetDirName;
+    switch (type)
+    {
+    case ResourceType::character:
+        {
+            targetDirName = "characters";
+            break;
+        }
+    case ResourceType::dialogue:
+        {
+            targetDirName = "dialogue";
+            break;
+        }
+    case ResourceType::levels:
+        {
+            targetDirName = "levels";
+            break;
+        }
+    case ResourceType::notestyles:
+        {
+            targetDirName = "notestyles";
+            break;
+        }
+    case ResourceType::songs:
+        {
+            targetDirName = "songs";
+            break;
+        }
+    case ResourceType::stages:
+        {
+            targetDirName = "stages";
+            break;
+        }
+    case ResourceType::stickerpacks:
+        {
+            targetDirName = "stickerpacks";
+            break;
+        }
+    case ResourceType::ui:
+        {
+            targetDirName = "ui";
+            break;
+        }
+    default:
+        {
+            LOG_WRONG_PARAM_ERROR("你写错了参数！");
+            break;
+        }
+    }
+
+    return QDir::cleanPath(modAbsolutePath + QDir::separator() + "data" + QDir::separator() + targetDirName);
 }

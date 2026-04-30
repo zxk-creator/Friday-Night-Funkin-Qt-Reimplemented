@@ -4,8 +4,22 @@
 #include <QFile>
 #include <qfileinfo.h>
 #include "QDir"
+#include "exception/CustomException.h"
 
 using FunkinPath = QString;
+
+// 对应VS data目录下的文件（参考自VS Sky Redux，可能少了些东西？不知道）
+enum class ResourceType
+{
+	character,
+	dialogue,
+	levels,
+	notestyles,
+	songs,
+	stages,
+	stickerpacks,
+	ui
+};
 
 /**
   * @brief 全平台适用。Windows若安装在Program Files目录下需要管理员权限，Android若没有授予管理所有文件的权限，mod功能将无法使用。
@@ -46,5 +60,15 @@ public:
 	 * @brief 获取mods目录下的所有子目录路径并返回一个数组
 	**/
 	static QVector<QString> getAllModFolderPaths();
+
+	/**
+	 * 获取数据目录下的一些内容
+	 * @param type 资源类型
+	 * @param modAbsolutePath 模组根目录绝对路径
+	 * @return 构造好的路径，如果您传入了错误的数据，会导致异常，程序终止防止你写错。
+	 */
+	static QString getVSDataPath(ResourceType type, const QString& modAbsolutePath);
+
+	static 
 };
 

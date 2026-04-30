@@ -3,13 +3,13 @@
 //
 
 #include "utils/exception/CustomException.h"
-
+#include "utils/message/MessageHandler.h"
 
 void Exception::logParseJSONException(const string& message, const string& functionName, const string& fileName, int atLine)
 {
     // 暂时不弹窗
     string resStr = "\nJSON解析错误！\n" + message + "\n发生在函数 " + functionName + " 行 " + std::to_string(atLine) + "\nJSON文件名：" + fileName + "\n";
-    qCritical() << QString::fromStdString(resStr);
+    MessageHandler::logError(QString::fromStdString(resStr));
 
     // TODO: 也许我们可以在这里加一些弹窗逻辑告知用户？
 }
@@ -18,7 +18,7 @@ void Exception::logParseJSONException(const QString& message, const QString& fun
 {
     // 暂时不弹窗
     QString resStr = "\nJSON解析错误！\n" + message + "\n发生在函数 " + functionName + " 行 " + QString::number(atLine) + "\nJSON文件名：" + fileName + "\n";
-    qCritical() << resStr;
+    MessageHandler::logError(resStr);
 
     // TODO: 也许我们可以在这里加一些弹窗逻辑告知用户？
 }
@@ -26,7 +26,10 @@ void Exception::logParseJSONException(const QString& message, const QString& fun
 void Exception::logNullPointerException(const string& message,const string& functionName, int atLine)
 {
     string resStr = "\n发生空指针异常！\n" + message + "\n发生在函数" + functionName + "行" + std::to_string(atLine);
-    qCritical() << QString::fromStdString(resStr);
+    MessageHandler::logError(QString::fromStdString(resStr));
+
+    // 都空指针了再运行岂不是炸了
+    std::terminate();
 }
 
 void Exception::logParseModException(ModParseExcpetionType excpetionType, const QString& file)
@@ -61,11 +64,20 @@ void Exception::logParseModException(ModParseExcpetionType excpetionType, const 
         }
     }
 
-    qCritical() << message;
+    MessageHandler::logError(message);
 }
 
 void Exception::logVersionInvalid(const string& versionProvided, const string& versionNeeded, const string& fileName)
 {
     string message = "模组版本不匹配，需要" + versionProvided + "，却提供了: " + versionNeeded + "。在文件: " + fileName;
-    qCritical() << QString::fromStdString(message);
+    MessageHandler::logError(QString::fromStdString(message));
+}
+
+void Exception::wrongParamException(const QString& msg,const QString& functionName, const int atLine)
+{
+    QString res = msg + "，发生在" + functionName + "，在" + QString::number(atLine) + "，行";
+    MessageHandler::logError(res);
+
+    // 直接自杀
+    std::terminate();
 }

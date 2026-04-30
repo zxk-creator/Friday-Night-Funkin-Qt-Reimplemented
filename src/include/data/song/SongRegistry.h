@@ -6,10 +6,12 @@
 #include "data/BaseRegistry.h"
 #include "play/song/Song.h"
 
+// 专门管Song对象存放的
 class SongRegistry : public BaseRegistry
 {
-private:
-    std::map<std::string, Song> entries;  // songId → Song 对象
+    // C++ variable name is really long and long and I can't stand with it anymore.
+    // {id: 歌曲对象}
+    std::unordered_map<std::string, std::unique_ptr<Song>> entries;
     static SongRegistry* s_instance;
 
 public:

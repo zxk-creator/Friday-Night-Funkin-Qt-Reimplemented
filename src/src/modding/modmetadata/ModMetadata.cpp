@@ -3,19 +3,19 @@
 //
 
 #include "modding/modmetadata/ModMetadata.h"
-#include "utils/InstanceLibrary.h"
+#include "utils/lang/LangStringPool.h"
 
 ModMetadata::ModMetadata()
 {
-    description = InstanceLibrary::langStringPool->noDescription().toStdString();
-    title = InstanceLibrary::langStringPool->untitledMod().toStdString();
-    iconPath = nullopt;
+    description = LangStringPool::instance()->noDescription().toStdString();
+    title = LangStringPool::instance()->untitledMod().toStdString();
+    iconPath = std::nullopt;
 }
 
 QString ModMetadata::getMainInfoString() const
 {
     QString extraInfoStr;
-    auto pool = InstanceLibrary::langStringPool;
+    auto pool = LangStringPool::instance();
 
     if (description.has_value())
         extraInfoStr += pool->description() + QString::fromStdString(description.value()) + "<br/>";
@@ -31,12 +31,12 @@ QString ModMetadata::getExtraInfoString() const
 {
     QString extraInfoStr;
     // 简化冗长的代码
-    auto pool = InstanceLibrary::langStringPool;
+    auto pool = LangStringPool::instance();
 
     if (apiVersion.has_value())
-        extraInfoStr += InstanceLibrary::langStringPool->modNeedEngineVersion() + QString::fromStdString(apiVersion.value()) + "<br/>";
+        extraInfoStr += LangStringPool::instance()->modNeedEngineVersion() + QString::fromStdString(apiVersion.value()) + "<br/>";
     if (modVersion.has_value())
-        extraInfoStr += InstanceLibrary::langStringPool->modVersion() + QString::fromStdString(modVersion.value()) + "<br/>";
+        extraInfoStr += LangStringPool::instance()->modVersion() + QString::fromStdString(modVersion.value()) + "<br/>";
     if (dependencies.has_value())
     {
         extraInfoStr += "<br/>" + pool->modOptionalDependencies();

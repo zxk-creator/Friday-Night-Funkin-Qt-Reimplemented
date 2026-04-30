@@ -11,14 +11,22 @@ class FunkinSoundSystem : public QObject
 	Q_OBJECT
 
 private:
-	static FunkinSoundSystem* f_instance;
+	static inline FunkinSoundSystem* f_instance;
 
 public:
 	explicit FunkinSoundSystem(QObject *parent = nullptr);
 
 	static FunkinSoundSystem* instance()
 	{
-		if (!f_instance) f_instance = new FunkinSoundSystem();
+		if (!f_instance)
+		{
+			f_instance = new FunkinSoundSystem();
+
+			// tmd被自己的shi山代码整笑，我排查了半小时才发现必须把这里加到第一次初始化内，否则就会无限递归导致崩溃！
+			// 不信你试试，把下面这个代码放到花括号外面
+			f_instance->initBuildInSounds();
+		}
+
 		return f_instance;
 	}
 

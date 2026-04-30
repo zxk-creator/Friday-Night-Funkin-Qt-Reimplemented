@@ -26,7 +26,7 @@ public:
      * @param soundType 声音类型
      * @param soundName 给这个声音取得名字
      */
-    FunkinSound(bool bLoadToRAM,const QString filePath,ESoundType soundType,bool whetherLoop,const QString soundName = "") {
+    FunkinSound(bool bLoadToRAM,const QString& filePath,ESoundType soundType,bool whetherLoop,const QString soundName = "") {
 
         ma_uint32 flag = 0;
         // 指针，共享同一份实例。一定存在，除非你忘了初始化音频系统

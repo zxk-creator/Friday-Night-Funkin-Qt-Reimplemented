@@ -68,7 +68,7 @@ public:
         if (role == IconRole && mod.iconPath.has_value()) return QString::fromStdString(mod.iconPath.value());
         // 直接返回完整字符串让qml显示！
         if (role == DetailRole) return mod.getDetailString();
-        if (role == PathRole) return QString::fromStdString(mod.modPath.value());
+        if (role == PathRole) return QString::fromStdString(mod.modPath);
 
         return {};
     }

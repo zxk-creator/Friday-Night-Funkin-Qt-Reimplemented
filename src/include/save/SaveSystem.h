@@ -11,7 +11,7 @@ class SaveSystem{
 
 private:
     Save* saveInstance = nullptr;
-    static SaveSystem* s_instance;
+    static inline SaveSystem* s_instance;
 
 public:
     // 初始化逻辑写在构造函数里面，new出来后，指针将被一个专门存放的类持有，从而调用他身上的方法

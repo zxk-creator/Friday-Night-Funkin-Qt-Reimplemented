@@ -5,6 +5,8 @@
 
 #include "audio/FunkinSoundSystem.h"
 #include "modding/scan/ModManager.h"
+#include "utils/interseting/InterestingThings.h"
+#include "play/event/IHookEvents.h"
 
 #ifdef Q_OS_ANDROID
 #include "permissions/GetAndroidStoragePermission.h"
@@ -26,6 +28,15 @@ void requestAndroidPermission()
 }
 #endif
 
+
+/**
+ * 我一直在想，注释到底用英文写还是中文写？
+ * 毕竟国内FNF热度一般，又有多少人会关注我这个项目
+ * 国外也一般半
+ * 算了
+ * 自娱自乐
+ * 注释还是Chinese+
+ */
 int main(int argc, char *argv[])
 {
     // printf("Hello World!");
@@ -50,6 +61,9 @@ int main(int argc, char *argv[])
 
     if (engine.rootObjects().isEmpty())
         return -1;
+
+    InterestingThings::damn();
+
     // 测试：放首歌听听
     auto test = new FunkinSound(false,":/mods/default/preload/music/freakyMenu/freakyMenu.ogg",ESoundType::uiSound,true,"freakyMenu");
     test->playSound();

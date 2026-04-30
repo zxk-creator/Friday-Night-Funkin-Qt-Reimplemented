@@ -8,6 +8,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Core)
+find_package(Qt6 REQUIRED COMPONENTS Core Qml Quick Network Widgets)
 find_package(Qt${QT_VERSION_MAJOR}
     COMPONENTS
         Quick
@@ -53,7 +54,7 @@ set(PROJECT_SOURCES
         src/include/utils/exception/CustomException.h
         src/src/utils/exception/CustomException.cpp
         src/src/data/level/LevelData.cpp
-        src/src/utils/file/FileUtil.h
+        src/include/utils/file/FileUtil.h
         src/include/data/song/SongRegistry.h
         src/include/play/song/Song.h
         src/include/data/song/SongData.h
@@ -61,7 +62,9 @@ set(PROJECT_SOURCES
         src/src/modding/modmetadata/VersonRule.cpp
         src/src/permissions/GetAndroidStoragePermission.cpp
         src/src/data/song/SongData.cpp
-        src/include/data/song/SongDifficulty.h
+        src/include/utils/message/MessageHandler.h
+        src/include/utils/interseting/InterestingThings.h
+        src/include/play/event/IHookEvents.h
 )
 
 set(CMAKE_AUTORCC ON)
@@ -121,6 +124,7 @@ endif ()
 target_link_libraries(${PROJECT_NAME}
     PUBLIC
         Qt::Quick
+        Qt6::Widgets
 )
 
 
