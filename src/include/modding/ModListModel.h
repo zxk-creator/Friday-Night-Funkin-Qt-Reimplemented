@@ -64,11 +64,11 @@ public:
 
         const ModMetadata &mod = m_mods[index.row()];
         // 把一些常用属性给拼接成字符串方便显示！
-        if (role == NameRole && mod.title.has_value()) return QString::fromStdString(mod.title.value());
-        if (role == IconRole && mod.iconPath.has_value()) return QString::fromStdString(mod.iconPath.value());
+        if (role == NameRole && mod.title.has_value()) return mod.title.value();
+        if (role == IconRole && mod.iconPath.has_value()) return mod.iconPath.value();
         // 直接返回完整字符串让qml显示！
         if (role == DetailRole) return mod.getDetailString();
-        if (role == PathRole) return QString::fromStdString(mod.modPath);
+        if (role == PathRole) return mod.modPath;
 
         return {};
     }

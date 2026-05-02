@@ -21,6 +21,7 @@ inline void initQmlEngine(QQmlApplicationEngine &engine)
 }
 
 #ifdef Q_OS_ANDROID
+// 检查管理所有文件权限是否已get
 void requestAndroidPermission()
 {
     if (!hasAllFilesPermission())
@@ -39,6 +40,12 @@ void requestAndroidPermission()
  */
 int main(int argc, char *argv[])
 {
+    // 看看ASan内存分析工具是否正常工作
+    /*
+    int* p = nullptr;
+    *p = 42;
+    */
+
     // printf("Hello World!");
 
 #if defined(Q_OS_WIN) && QT_VERSION_CHECK(5, 6, 0) <= QT_VERSION && QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
@@ -50,7 +57,6 @@ int main(int argc, char *argv[])
     app.setWindowIcon(QIcon(":/qt/qml/fnf/BF.ico"));
 
     #ifdef Q_OS_ANDROID
-    // 检查管理所有文件权限是否已get
     requestAndroidPermission();
     #endif
 

@@ -149,47 +149,47 @@ QVector<QString> Path::getAllModFolderPaths()
     return res;
 }
 
-QString Path::getVSDataPath(ResourceType type, const QString& modAbsolutePath)
+QString Path::getVSDataPath(DataResourceType type, const QString& modAbsolutePath)
 {
     QString targetDirName;
     switch (type)
     {
-    case ResourceType::character:
+    case DataResourceType::character:
         {
             targetDirName = "characters";
             break;
         }
-    case ResourceType::dialogue:
+    case DataResourceType::dialogue:
         {
             targetDirName = "dialogue";
             break;
         }
-    case ResourceType::levels:
+    case DataResourceType::levels:
         {
             targetDirName = "levels";
             break;
         }
-    case ResourceType::notestyles:
+    case DataResourceType::notestyles:
         {
             targetDirName = "notestyles";
             break;
         }
-    case ResourceType::songs:
+    case DataResourceType::songs:
         {
             targetDirName = "songs";
             break;
         }
-    case ResourceType::stages:
+    case DataResourceType::stages:
         {
             targetDirName = "stages";
             break;
         }
-    case ResourceType::stickerpacks:
+    case DataResourceType::stickerpacks:
         {
             targetDirName = "stickerpacks";
             break;
         }
-    case ResourceType::ui:
+    case DataResourceType::ui:
         {
             targetDirName = "ui";
             break;

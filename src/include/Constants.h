@@ -5,12 +5,17 @@
 #pragma once
 #include <string>
 
-namespace SongRegistryRelative
+namespace SongDataRelative
 {
-    static inline const std::string SONG_METADATA_VERSION = "2.2.4";
-    static inline const std::string SONG_METADATA_VERSION_RULE = "2.2.x";
-    static inline const std::string SONG_CHART_DATA_VERSION = "2.0.0";
-    static inline const std::string SONG_CHART_DATA_VERSION_RULE = "2.0.x";
-    static inline const std::string SONG_MUSIC_DATA_VERSION = "2.0.0";
-    static inline const std::string SONG_MUSIC_DATA_VERSION_RULE = "2.0.x";
+    static inline const QString SONG_METADATA_VERSION = "2.2.4";
+    static inline const QString SONG_METADATA_VERSION_RULE = "2.2.x";
+    static inline const QString SONG_CHART_DATA_VERSION = "2.0.0";
+    static inline const QString SONG_CHART_DATA_VERSION_RULE = "2.0.x";
+    static inline const QString SONG_MUSIC_DATA_VERSION = "2.0.0";
+    static inline const QString SONG_MUSIC_DATA_VERSION_RULE = "2.0.x";
+}
+
+namespace LevelDataRelative
+{
+    static inline const QString LEVEL_DATA_VERSION = "1.0.1";
 }

@@ -1,71 +1,76 @@
-# Friday Night Funkin Qt Reimplemented
+# Quark Engine - Based on Qt Framework
 
-[中文文档](ZHREADME.md) | [**English Version**](README.md)
+[**中文文档**](ZHREADME.md) | [**English Version**](README.md)
 
-## 📌 Introduction
-- A Friday Night Funkin' (FNF) reimplementation built from scratch using **Qt** and **C++**.
-- This is my first open-source project, primarily created for learning C++ and the Qt framework. **Playability is not guaranteed.**
-- Driven by pure interest—the project exists because I wanted to see if I could do it.
-- **Strategic Pivot:** Originally started in UE5, now migrated to Qt for a more lightweight architecture.
-- **Engine Name:** Quark Engine.
-- Built from the ground up without relying on any existing FNF engines. Pure "hand-crafted" logic.
-- *Note: The code might be a bit messy (still learning!!!).*
+## Introduction:
+- This is a project to recreate FNF (Friday Night Funkin') from scratch using Qt, and it's also my first open-source project, developed with C++.
+- The main purpose is to learn C++ and Qt. No guarantees that it will be fully playable.
+- Interest-driven learning, hence this project.
+- Originally developed with UE5, but then strategically transitioned.
+- Planned to be named **Quark Engine**
+- Not based on any original engine, built entirely from scratch!
+- *The code might be a bit messy.*
 
-## 🛠 Roadmap
-- [x] Implement custom mod parsing & mod selection UI
-- [ ] Build basic game interface
-- [ ] Develop custom JSON / XML / PNG parsing modules
-- [ ] Implement mod asset loading and core gameplay logic
-- [ ] Develop script compatibility layer
-- [ ] Full reimplementation complete
+## 🛠 Roadmap:
+- [x] Build mod parsing and mod selection interface from scratch
+- [ ] Build basic game interface from scratch
+- [ ] Build json/xml/png parsing modules from scratch
+- [ ] Parse mod files and make the game playable from scratch
+- [ ] Build compatibility scripts from scratch
+- [ ] Successfully recreate the game
 
-*This is a hobby project. Estimated development time: 1–2 years.*
+*Developed in spare time, expected to take one to two years.*
 
-## ✅ How to Build
-Clone the repository to your local drive and open the directory with **Visual Studio** or **CLion**. It should be ready to configure and build.
-
-It's recommended to use **Linux** to develop this project.
+## ✅ How to Build:
+Clone this project, copy it to any location on your disk, and open the CMakeList.txt file under the project directory with VS or CLion. You need to download the dependency libraries and set up the development environment according to the Qt documentation first. Dockerfile for one-click compilation will be available later.
 
 ## 🚀 Development Environment
-<img src="./DocumentImages/Clion.png" width="60" alt="CLion">
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-<img src="./DocumentImages/Visual%20Studio.png" width="60" alt="VS">
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-<img src="./DocumentImages/C++.png" width="60" alt="Cpp">
+<img src="./DocumentImages/Clion.png" width="50" alt="CLion">
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<img src="./DocumentImages/Visual%20Studio.png" width="50" alt="Visual Studio">
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<img src="./DocumentImages/C++.png" width="50" alt="C++">
 
-* **IDE**: Visual Studio 2022 / Qt Creator / **CLion (Recommended)**
+* **IDE**: Visual Studio 2022 / Qt Creator / CLion (Recommended)
 * **Language**: C++17
 * **Framework**: Qt 6.9.2
 * **Build System**: CMake / qmake
-* **OS**: Linux(Recommended)
+* **OS**: Linux recommended
 
-*PS: VS Code works too, but configuration can be a headache. Best for those who enjoy troubleshooting.*
+*PS: VSCode also works, but configuration is tedious. Suitable for tinkerers.*
 
-## 🤝 Contributors
-- **LaoKun(myself)**
+## 🤝 Contributors:
+**Laokun**
 
 ## 📁 Project Structure
-Mirroring the original FNF (Official Engine) layout
-* QML: Interface description files.
-* src: Source code directory.
-* src/include: Header files (includes some inline implementations).
-* src/src: .cpp source files.
-* docker: One-click build environment (Work in Progress).
-* android: Java source code and manifest files for Android APK builds.
-* mod: Core game art assets sourced from the official engine (does not include all playable weeks).
-* main.cpp: The main entry point of the program. Start your reference here.
-* rc: Windows icon and resource files.
+**Similar to the original FNF (official engine)**
+* QML: UI description files
+* src: Source code files
+* src/include: Header files, including some implementations
+* src/src: .cpp source code files
+* docker: One-click pull and compile (not yet implemented)
+* android: Java code and manifest files for Android APK building
+* mod: Basic art resources for the game, taken from the official engine (does not include all playable weeks)
+* main.cpp: Main entry point of the program. **You can start referencing from here.**
+* rc: Windows icon files.
 
 ## 📄 License
-To be honest, I haven't decided if I need one yet.
+GPL
 
 ## 📸 Screenshots
-I guess I have one. But it's Hello World. Do you want to see?
+* Mod Selection Screen
+  <img src="./DocumentImages/ScreenShots/ModSelectScreen.png" width="1000" alt="ModSelect">
 
-## 💬 Contact Author
-- [Youtube - LaoKun](https://www.youtube.com/@LaoKunStudio)
-- zxkverygood@gmail.com
+## 📚 Libraries Used
+* [miniaudio/stb_vorbis](https://miniaud.io/): Low-level audio playback
+* [nlohmann/json](https://json.nlohmann.me/): JSON file parsing
+* [pugixml](https://pugixml.org/): XML file parsing
+* [semver](https://semver.org/): Semantic version string parsing
 
-## 📜 Credits
-* [Friday Night Funkin'](https://github.com/ninjamuffin99/Funkin) - Huge thanks to the original team for this amazing game.
-* Thanks to the entire open-source community for the technical inspiration.
+## 💬 Contact the Author
+https://space.bilibili.com/533393738?spm_id_from=333.1007.0.0
+
+## 📜 Acknowledgements
+* [Friday Night Funkin'](https://github.com/ninjamuffin99/Funkin) - Thanks to the original author team for their great work.
+* [Psych Engine](https://github.com/ShadowMario/FNF-PsychEngine/releases) - Source code reference and design patterns.
+* And all the open-source community for providing technical inspiration.

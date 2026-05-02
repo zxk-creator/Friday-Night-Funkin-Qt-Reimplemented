@@ -73,6 +73,12 @@ void Exception::logVersionInvalid(const string& versionProvided, const string& v
     MessageHandler::logError(QString::fromStdString(message));
 }
 
+void Exception::logVersionInvalid(const QString& versionProvided, const QString& versionNeeded, const QString& fileName)
+{
+    QString message = "模组版本不匹配，需要" + versionProvided + "，却提供了: " + versionNeeded + "。在文件: " + fileName;
+    MessageHandler::logError(message);
+}
+
 void Exception::wrongParamException(const QString& msg,const QString& functionName, const int atLine)
 {
     QString res = msg + "，发生在" + functionName + "，在" + QString::number(atLine) + "，行";

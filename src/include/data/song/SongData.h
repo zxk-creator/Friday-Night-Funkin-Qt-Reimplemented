@@ -6,14 +6,12 @@
 
 #include "nlohmann/json.hpp"
 #include <optional>
-#include <vector>
-#include <string>
-#include <unordered_map>
+#include <QVector>
 #include <memory>
 #include <iostream>
-#include <mutex>
 
 #include "Constants.h"
+#include "play/ISerializable.h"
 #include "semver/semver.h"
 #include "utils/exception/CustomException.h"
 
@@ -25,59 +23,226 @@ enum class SongTimeFormat {
     MILLISECONDS
 };
 
-struct SongTimeChange {
+/**
+ * 用于定义歌曲中 BPM 变化点 以及对应的 拍号信息。
+ */
+struct SongTimeChange : ISerializable {
     double timeStamp = 0.0;
     double beatTime = 0.0;
     double bpm = 100.0;
     int timeSignatureNum = 4;
     int timeSignatureDen = 4;
-    std::vector<int> beatTuplets = {4, 4, 4, 4};
+    QVector<int> beatTuplets = {4, 4, 4, 4};
 
     SongTimeChange() = default;
     SongTimeChange(double t, double bpm) : timeStamp(t), bpm(bpm) {}
-};
 
-struct SongOffsets {
-    double instrumental = 0.0;
-    std::unordered_map<std::string, double> altInstrumentals;
-    std::unordered_map<std::string, double> vocals;
-    std::unordered_map<std::string, std::unordered_map<std::string, double>> altVocals;
+    QString toString() const override
+    {
+        QString res = "时间戳: " + QString::number(timeStamp)
+                       + ", BPM: " + QString::number(bpm)
+                       + ", 拍号: " + QString::number(timeSignatureNum) + "/" + QString::number(timeSignatureDen);
 
-    double getInstrumentalOffset(const std::string& instrumentalId = "") const {
-        if (instrumentalId.empty()) return instrumental;
-        auto it = altInstrumentals.find(instrumentalId);
-        return (it != altInstrumentals.end()) ? it->second : instrumental;
+        if (!beatTuplets.isEmpty()) {
+            res += ", 连音: [";
+            for (int i = 0; i < beatTuplets.size(); ++i) {
+                res += QString::number(beatTuplets[i]);
+                if (i < beatTuplets.size() - 1) res += ", ";
+            }
+            res += "]";
+        }
+        return res;
     }
 
-    double getVocalOffset(const std::string& charId, const std::string& instrumentalId = "") const {
-        if (!instrumentalId.empty()) {
+    QString oneToString(const QString& id) const override
+    {
+        return "";
+    }
+
+    // nlohmann 自动转换
+    void from_json(const json& j) {
+        if (j.contains("t")) timeStamp = j["t"].get<double>();
+        if (j.contains("b")) beatTime = j["b"].get<double>();
+        if (j.contains("bpm")) bpm = j["bpm"].get<double>();
+        if (j.contains("n")) timeSignatureNum = j["n"].get<int>();
+        if (j.contains("d")) timeSignatureDen = j["d"].get<int>();
+        if (j.contains("bt")) {
+            auto btArray = j["bt"].get<std::vector<int>>();
+            beatTuplets = QVector<int>(btArray.begin(), btArray.end());
+        }
+    }
+};
+
+/**
+ * 用于微调音频与谱面的同步，解决由于音频编码延迟、剪辑问题或硬件差异导致的音画不同步。
+ */
+struct SongOffsets : ISerializable {
+    double instrumental = 0.0;
+    QHash<QString, double> altInstrumentals;
+    QHash<QString, double> vocals;
+    QHash<QString, QHash<QString, double>> altVocals;
+
+    double getInstrumentalOffset(const QString& instrumentalId = "") const {
+        if (instrumentalId.isEmpty()) return instrumental;
+        auto it = altInstrumentals.find(instrumentalId);
+        return (it != altInstrumentals.end()) ? it.value() : instrumental;
+    }
+
+    double getVocalOffset(const QString& charId, const QString& instrumentalId = "") const {
+        if (!instrumentalId.isEmpty()) {
             auto itInst = altVocals.find(instrumentalId);
             if (itInst != altVocals.end()) {
-                auto itChar = itInst->second.find(charId);
-                if (itChar != itInst->second.end()) return itChar->second;
+                auto itChar = itInst.value().find(charId);
+                if (itChar != itInst.value().end()) return itChar.value();
             }
         }
         auto it = vocals.find(charId);
-        return (it != vocals.end()) ? it->second : 0.0;
+        return (it != vocals.end()) ? it.value() : 0.0;
+    }
+
+    QString toString() const override
+    {
+        QString res = "乐器偏移: " + QString::number(instrumental) + "\n";
+
+        if (!altInstrumentals.isEmpty()) {
+            res += "替代乐器偏移: \n";
+            for (auto it = altInstrumentals.constBegin(); it != altInstrumentals.constEnd(); ++it) {
+                res += "  " + it.key() + ": " + QString::number(it.value()) + "\n";
+            }
+        }
+
+        if (!vocals.isEmpty()) {
+            res += "人声偏移: \n";
+            for (auto it = vocals.constBegin(); it != vocals.constEnd(); ++it) {
+                res += "  " + it.key() + ": " + QString::number(it.value()) + "\n";
+            }
+        }
+
+        if (!altVocals.isEmpty()) {
+            res += "替代人声偏移: \n";
+            for (auto it = altVocals.constBegin(); it != altVocals.constEnd(); ++it) {
+                res += "  " + it.key() + ":\n";
+                const auto& innerHash = it.value();
+                for (auto innerIt = innerHash.constBegin(); innerIt != innerHash.constEnd(); ++innerIt) {
+                    res += "    " + innerIt.key() + ": " + QString::number(innerIt.value()) + "\n";
+                }
+            }
+        }
+
+        return res;
+    }
+
+    QString oneToString(const QString& id) const override
+    {
+        return "";
+    }
+
+    // nlohmann 自动转换
+    void from_json(const json& j) {
+        if (j.contains("instrumental")) instrumental = j["instrumental"].get<double>();
+        if (j.contains("altInstrumentals")) {
+            for (auto& [key, val] : j["altInstrumentals"].items()) {
+                altInstrumentals[QString::fromStdString(key)] = val.get<double>();
+            }
+        }
+        if (j.contains("vocals")) {
+            for (auto& [key, val] : j["vocals"].items()) {
+                vocals[QString::fromStdString(key)] = val.get<double>();
+            }
+        }
+        if (j.contains("altVocals")) {
+            for (auto& [key, val] : j["altVocals"].items()) {
+                QString instKey = QString::fromStdString(key);
+                for (auto& [charKey, charVal] : val.items()) {
+                    altVocals[instKey][QString::fromStdString(charKey)] = charVal.get<double>();
+                }
+            }
+        }
     }
 };
 
-struct SongCharacterData {
-    std::string player = "bf";
-    std::string girlfriend = "gf";
-    std::string opponent = "dad";
-    std::string instrumental = "";
-    // 所谓“替代伴奏”到底是什么意思
-    // 我认为特可能是为erect什么准备的，不知道，有人反馈了再说吧
-    std::vector<std::string> altInstrumentals;
+struct SongCharacterData : ISerializable {
+    QString player = "bf";
+    QString girlfriend = "gf";
+    QString opponent = "dad";
+    QString instrumental = "";
+    // 所谓"替代伴奏"到底是什么意思
+    // 我认为特可能是为erect什么准备的，不知道
+    // 存储的是歌曲的绝对路径！播放就从这里拿路径
+    std::vector<QString> altInstrumentals;
     // 据说这个数组里面的音效会同时播放
-    std::vector<std::string> opponentVocals;
+    std::vector<QString> opponentVocals;
     // 也会同时播放
-    std::vector<std::string> playerVocals;
+    std::vector<QString> playerVocals;
 
     SongCharacterData() = default;
-    SongCharacterData(const std::string& p, const std::string& gf, const std::string& opp)
+    SongCharacterData(const QString& p, const QString& gf, const QString& opp)
         : player(p), girlfriend(gf), opponent(opp) {}
+
+    QString toString() const override
+    {
+        QString division = "--- 角色信息 ---\n";
+        QString res;
+        res += division + "右边角色: " + player + "\n";
+        res += "左边角色: " + opponent + "\n";
+        res += "中间角色: " + girlfriend + "\n";
+        res += "伴奏: " + instrumental + "\n";
+
+        res += "替代伴奏: ";
+        for (size_t i = 0; i < altInstrumentals.size(); ++i) {
+            res += altInstrumentals[i];
+            if (i < altInstrumentals.size() - 1) res += ", ";
+        }
+        res += "\n";
+
+        res += "玩家音效: ";
+        for (size_t i = 0; i < playerVocals.size(); ++i) {
+            res += playerVocals[i];
+            if (i < playerVocals.size() - 1) res += ", ";
+        }
+        res += "\n";
+
+        res += "对手音效: ";
+        for (size_t i = 0; i < opponentVocals.size(); ++i) {
+            res += opponentVocals[i];
+            if (i < opponentVocals.size() - 1) res += ", ";
+        }
+        res += "\n";
+
+        return res;
+    }
+
+    QString oneToString(const QString& id) const override
+    {
+        return "";
+    }
+
+    // nlohmann 自动转换
+    void from_json(const json& j) {
+        if (j.contains("player")) player = QString::fromStdString(j["player"].get<std::string>());
+        if (j.contains("girlfriend")) girlfriend = QString::fromStdString(j["girlfriend"].get<std::string>());
+        if (j.contains("opponent")) opponent = QString::fromStdString(j["opponent"].get<std::string>());
+        if (j.contains("instrumental")) instrumental = QString::fromStdString(j["instrumental"].get<std::string>());
+
+        if (j.contains("altInstrumentals")) {
+            altInstrumentals.clear();
+            for (const auto& item : j["altInstrumentals"]) {
+                altInstrumentals.push_back(QString::fromStdString(item.get<std::string>()));
+            }
+        }
+        if (j.contains("opponentVocals")) {
+            opponentVocals.clear();
+            for (const auto& item : j["opponentVocals"]) {
+                opponentVocals.push_back(QString::fromStdString(item.get<std::string>()));
+            }
+        }
+        if (j.contains("playerVocals")) {
+            playerVocals.clear();
+            for (const auto& item : j["playerVocals"]) {
+                playerVocals.push_back(QString::fromStdString(item.get<std::string>()));
+            }
+        }
+    }
 };
 
 /**
@@ -104,80 +269,294 @@ struct SongCharacterData {
     }
  * 就叫playData，包含了难度数据（只有字符串）
  */
-struct SongPlayData {
+struct SongPlayData : ISerializable {
     // 传说中的变体，-erect，-pico等
-    std::vector<std::string> songVariations;
-    std::vector<std::string> difficulties;
+    QVector<QString> songVariations;
+    QVector<QString> difficulties;
     SongCharacterData characters;
-    std::string stage = "mainStage";
-    std::string noteStyle = "funkin";
-    std::unordered_map<std::string, int> ratings;
-    std::optional<std::string> album;
-    std::optional<std::string> stickerPack;
+    QString stage = "mainStage";
+    QString noteStyle = "funkin";
+    QHash<QString, int> ratings;
+    std::optional<QString> album;
+    std::optional<QString> stickerPack;
     int previewStart = 0;
     int previewEnd = 15000;
+
+    QString toString() const override
+    {
+        QString res;
+
+        if (!difficulties.isEmpty()) {
+            res += "可用难度: ";
+            for (size_t i = 0; i < difficulties.size(); ++i) {
+                res += difficulties[i];
+                if (i < difficulties.size() - 1) res += " ";
+            }
+            res += "\n";
+        }
+
+        if (!songVariations.isEmpty()) {
+            res += "变体: ";
+            for (size_t i = 0; i < songVariations.size(); ++i) {
+                res += songVariations[i];
+                if (i < songVariations.size() - 1) res += " ";
+            }
+            res += "\n";
+        }
+
+        res += "舞台: " + stage + "\n";
+        res += "音符风格: " + noteStyle + "\n";
+        res += "预览范围: " + QString::number(previewStart) + " - " + QString::number(previewEnd) + "\n";
+
+        if (!ratings.isEmpty()) {
+            res += "难度评级: \n";
+            for (auto it = ratings.constBegin(); it != ratings.constEnd(); ++it) {
+                res += "  " + it.key() + ": " + QString::number(it.value()) + "\n";
+            }
+        }
+
+        if (album.has_value()) {
+            res += "专辑: " + album.value() + "\n";
+        }
+        if (stickerPack.has_value()) {
+            res += "贴纸包: " + stickerPack.value() + "\n";
+        }
+
+        res += characters.toString();
+
+        return res;
+    }
+
+    QString oneToString(const QString& id) const override
+    {
+        return "";
+    }
+
+    // nlohmann 自动转换
+    void from_json(const json& j) {
+        if (j.contains("songVariations")) {
+            songVariations.clear();
+            for (const auto& item : j["songVariations"]) {
+                songVariations.push_back(QString::fromStdString(item.get<std::string>()));
+            }
+        }
+        if (j.contains("difficulties")) {
+            difficulties.clear();
+            for (const auto& item : j["difficulties"]) {
+                difficulties.push_back(QString::fromStdString(item.get<std::string>()));
+            }
+        }
+        if (j.contains("characters")) {
+            characters.from_json(j["characters"]);
+        }
+        if (j.contains("stage")) stage = QString::fromStdString(j["stage"].get<std::string>());
+        if (j.contains("noteStyle")) noteStyle = QString::fromStdString(j["noteStyle"].get<std::string>());
+        if (j.contains("ratings")) {
+            for (auto& [key, val] : j["ratings"].items()) {
+                ratings[QString::fromStdString(key)] = val.get<int>();
+            }
+        }
+        if (j.contains("album")) album = QString::fromStdString(j["album"].get<std::string>());
+        if (j.contains("stickerPack")) stickerPack = QString::fromStdString(j["stickerPack"].get<std::string>());
+        if (j.contains("previewStart")) previewStart = j["previewStart"].get<int>();
+        if (j.contains("previewEnd")) previewEnd = j["previewEnd"].get<int>();
+    }
 };
 
 /**
  * 包含PlayData，CharacterData（定义对手，玩家，女朋友是谁），Offsets等
+ * 请注意，这里面并不存储任何绝对路径，他只存ID，路径都是运行时拼接出来的
  */
-struct SongMetaData {
-    std::string version = "2.2.4";
-    std::string songName = "Unknown";
-    std::string artist = "Unknown";
-    std::optional<std::string> charter;
+struct SongMetaData : ISerializable {
+    QString version = "2.2.4";
+    QString songName = "Unknown";
+    QString artist = "Unknown";
+    std::optional<QString> charter;
     std::optional<int> divisions = 96;
     bool looped = false;
     SongOffsets offsets;
     SongPlayData playData;
-    std::string generatedBy;
+    QString generatedBy;
     SongTimeFormat timeFormat = SongTimeFormat::MILLISECONDS;
-    std::vector<SongTimeChange> timeChanges;
+    QVector<SongTimeChange> timeChanges;
 
     SongMetaData() = default;
+
+    QString toString() const override
+    {
+        QString division = "========== 歌曲元数据 ==========\n";
+        QString res = division;
+
+        // 基本信息
+        res += "版本: " + version + "\n";
+        res += "歌曲名: " + songName + "\n";
+        res += "艺术家: " + artist + "\n";
+
+        if (charter.has_value()) {
+            res += "谱师: " + charter.value() + "\n";
+        }
+        if (divisions.has_value()) {
+            res += "分割数: " + QString::number(divisions.value()) + "\n";
+        }
+
+        res += "是否循环: " + QString(looped ? "是" : "否") + "\n";
+        res += "时间格式: " + QString(timeFormat == SongTimeFormat::MILLISECONDS ? "毫秒" : "节拍") + "\n";
+        res += "生成工具: " + generatedBy + "\n";
+
+        res += "\n--- 偏移量 ---\n";
+        res += offsets.toString();
+
+        res += "\n--- 游玩数据 ---\n";
+        res += playData.toString();
+
+        if (!timeChanges.isEmpty()) {
+            res += "\n--- 时间变化 ---\n";
+            for (const auto& tc : timeChanges) {
+                res += tc.toString() + "\n";
+            }
+        }
+
+        return res + "\n" + division;
+    }
+
+    QString oneToString(const QString& id) const override
+    {
+        return "";
+    }
+
+    // nlohmann 自动转换
+    void from_json(const json& j) {
+        if (j.contains("version")) version = QString::fromStdString(j["version"].get<std::string>());
+        if (j.contains("songName")) songName = QString::fromStdString(j["songName"].get<std::string>());
+        if (j.contains("artist")) artist = QString::fromStdString(j["artist"].get<std::string>());
+        if (j.contains("charter")) charter = QString::fromStdString(j["charter"].get<std::string>());
+        if (j.contains("divisions")) divisions = j["divisions"].get<int>();
+        if (j.contains("looped")) looped = j["looped"].get<bool>();
+        if (j.contains("offsets")) offsets.from_json(j["offsets"]);
+        if (j.contains("playData")) playData.from_json(j["playData"]);
+        if (j.contains("generatedBy")) generatedBy = QString::fromStdString(j["generatedBy"].get<std::string>());
+        if (j.contains("timeFormat")) {
+            std::string s = j["timeFormat"].get<std::string>();
+            if (s == "ticks") timeFormat = SongTimeFormat::TICKS;
+            else if (s == "float") timeFormat = SongTimeFormat::FLOAT;
+            else timeFormat = SongTimeFormat::MILLISECONDS;
+        }
+        if (j.contains("timeChanges") && j["timeChanges"].is_array()) {
+            timeChanges.clear();
+            for (const auto& item : j["timeChanges"]) {
+                SongTimeChange t;
+                t.from_json(item);
+                timeChanges.push_back(t);
+            }
+        }
+    }
 };
 
 // ==================== 2.0.x 临时结构体 ====================
 struct SongMetadata_v2_0_0 {
-    std::string version;
-    std::string songName;
-    std::string artist;
-    std::optional<std::string> charter;
+    QString version;
+    QString songName;
+    QString artist;
+    std::optional<QString> charter;
     std::optional<int> divisions = 96;
     bool looped = false;
     SongOffsets offsets;
 
     // 2.0.x 特有：字段在顶层
-    std::vector<std::string> difficulties;
+    QVector<QString> difficulties;
     SongCharacterData characters;
-    std::string stage = "mainStage";
-    std::string noteStyle = "funkin";
-    std::unordered_map<std::string, int> ratings;
+    QString stage = "mainStage";
+    QString noteStyle = "funkin";
+    QHash<QString, int> ratings;
 
-    std::string generatedBy;
+    QString generatedBy;
     SongTimeFormat timeFormat = SongTimeFormat::MILLISECONDS;
-    std::vector<SongTimeChange> timeChanges;
+    QVector<SongTimeChange> timeChanges;
+
+    // nlohmann 自动转换
+    void from_json(const json& j) {
+        if (j.contains("version")) version = QString::fromStdString(j["version"].get<std::string>());
+        if (j.contains("songName")) songName = QString::fromStdString(j["songName"].get<std::string>());
+        if (j.contains("artist")) artist = QString::fromStdString(j["artist"].get<std::string>());
+        if (j.contains("charter")) charter = QString::fromStdString(j["charter"].get<std::string>());
+        if (j.contains("divisions")) divisions = j["divisions"].get<int>();
+        if (j.contains("looped")) looped = j["looped"].get<bool>();
+        if (j.contains("offsets")) offsets.from_json(j["offsets"]);
+
+        // 2.0.x 特有：字段在顶层
+        if (j.contains("difficulties")) {
+            difficulties.clear();
+            for (const auto& item : j["difficulties"]) {
+                difficulties.push_back(QString::fromStdString(item.get<std::string>()));
+            }
+        }
+        if (j.contains("characters")) {
+            characters.from_json(j["characters"]);
+        }
+        if (j.contains("stage")) stage = QString::fromStdString(j["stage"].get<std::string>());
+        if (j.contains("noteStyle")) noteStyle = QString::fromStdString(j["noteStyle"].get<std::string>());
+        if (j.contains("ratings")) {
+            for (auto& [key, val] : j["ratings"].items()) {
+                ratings[QString::fromStdString(key)] = val.get<int>();
+            }
+        }
+
+        if (j.contains("generatedBy")) generatedBy = QString::fromStdString(j["generatedBy"].get<std::string>());
+        if (j.contains("timeFormat")) {
+            std::string s = j["timeFormat"].get<std::string>();
+            if (s == "ticks") timeFormat = SongTimeFormat::TICKS;
+            else if (s == "float") timeFormat = SongTimeFormat::FLOAT;
+            else timeFormat = SongTimeFormat::MILLISECONDS;
+        }
+        if (j.contains("timeChanges") && j["timeChanges"].is_array()) {
+            timeChanges.clear();
+            for (const auto& item : j["timeChanges"]) {
+                SongTimeChange t;
+                t.from_json(item);
+                timeChanges.push_back(t);
+            }
+        }
+    }
 };
 
 // ==================== 2.1.x 临时结构体 ====================
 struct SongMetadata_v2_1_0 {
-    std::string version;
-    std::string songName;
-    std::string artist;
-    std::optional<std::string> charter;
+    QString version;
+    QString songName;
+    QString artist;
+    std::optional<QString> charter;
     std::optional<int> divisions = 96;
     bool looped = false;
     SongOffsets offsets;
     SongPlayData playData;  // 2.1.x 已有 playData，但可能缺少 album/stickerPack
-    std::string generatedBy;
+    QString generatedBy;
     SongTimeFormat timeFormat = SongTimeFormat::MILLISECONDS;
-    std::vector<SongTimeChange> timeChanges;
+    QVector<SongTimeChange> timeChanges;
+
+    // nlohmann 自动转换
+    void from_json(const json& j);
 };
 
-struct NoteParamData {
-    std::string name;
+struct NoteParamData : ISerializable {
+    QString name;
     // value: Dynamic
     json value;
+
+    QString toString() const override
+    {
+        return "箭头参数: \n名字: " + name + "\n" + "参数: \n" + QString::fromStdString(value.dump()) + "\n";
+    }
+
+    QString oneToString(const QString& id) const override
+    {
+        return "";
+    }
+
+    // nlohmann 自动转换
+    void from_json(const json& j) {
+        if (j.contains("n")) name = QString::fromStdString(j["n"].get<std::string>());
+        if (j.contains("v")) value = j["v"];
+    }
 };
 
 /**
@@ -191,11 +570,28 @@ struct NoteParamData {
  * 就叫notedata，专门记录这个箭头方向和类型的
  */
 struct SongNoteData {
+    // 不让他可打印吧，直接打印数字
     double time = 0.0;
     int data = 0;
     double length = 0.0;
-    std::optional<std::string> kind;
-    std::vector<NoteParamData> params;
+    std::optional<QString> kind;
+    QVector<NoteParamData> params;
+
+    // nlohmann 自动转换
+    void from_json(const json& j) {
+        if (j.contains("t")) time = j["t"].get<double>();
+        if (j.contains("d")) data = j["d"].get<int>();
+        if (j.contains("l")) length = j["l"].get<double>();
+        if (j.contains("k")) kind = QString::fromStdString(j["k"].get<std::string>());
+        if (j.contains("p") && j["p"].is_array()) {
+            params.clear();
+            for (const auto& item : j["p"]) {
+                NoteParamData p;
+                p.from_json(item);
+                params.push_back(p);
+            }
+        }
+    }
 };
 
 /**
@@ -213,8 +609,15 @@ struct SongNoteData {
  */
 struct SongEventData {
     double time = 0.0;
-    std::string eventKind;
+    QString eventKind;
     json value;
+
+    // nlohmann 自动转换
+    void from_json(const json& j) {
+        if (j.contains("t")) time = j["t"].get<double>();
+        if (j.contains("e")) eventKind = QString::fromStdString(j["e"].get<std::string>());
+        if (j.contains("v")) value = j["v"];
+    }
 };
 
 /**
@@ -241,16 +644,38 @@ struct SongEventData {
  * 不过为什么我不直接用map呢，非得包装一下...
  * 算了就当简化代码
  */
-struct SongDifficulty {
+struct SongDifficulty : ISerializable {
     /**
      * {难度ID, 铺面数据}
      * 什么！你说有些模组故意没有NoteData?
      * 那还玩个蛋，不玩了
      */
-    std::unordered_map<string, std::vector<SongNoteData>> notes;
+    QHash<QString, QVector<SongNoteData>> notes;
 
     // 默认构造函数用于默认拷贝（比如访问某个成员发生拷贝）
     SongDifficulty() = default;
+
+    QString toString() const override
+    {
+        QHashIterator<QString, QVector<SongNoteData>> it(notes);
+
+        QString res = "难度数据: \n";
+        while (it.hasNext())
+        {
+            it.next();
+            // eg: "easy: 90个note"
+            res += it.key() + ": " + QString::number(it.value().size()) + "个note\n";
+        }
+
+        return res;
+    }
+
+    QString oneToString(const QString& id) const override
+    {
+        return "";
+    }
+
+    // 为什么没有from_json，因为他在SongChartData里面被自动处理了
 };
 
 /**
@@ -259,272 +684,51 @@ struct SongDifficulty {
  * 他里面存储了完整的铺面数据（通过notes成员）和难度对应关系
  * 甭管原版是怎么设计的，我就这样设计的。
  */
-struct SongChartData {
-    std::string version;
+struct SongChartData : ISerializable {
+    QString version;
     // 对应json的"easy""normal""hard"等字段
     SongDifficulty difficulties;
     // 对应event数组
-    std::vector<SongEventData> events;                      // 事件数组
-    std::unordered_map<std::string, double> scrollSpeed;              // 键值对 难度 : 滚动速度
-    std::string generatedBy;
-    std::string variation;
+    QVector<SongEventData> events;
+    // 难度 : 滚动速度
+    QHash<QString, float> scrollSpeed;
+    QString generatedBy;
+
+    // 展现整个铺面内容
+    QString toString() const override
+    {
+        // 我不信您能写21亿个事件
+        QString division = "========== 铺面信息 ==========\n";
+        int eventCount = events.size();
+        QString _scrollSpeeds = "箭头滚动速度: \n";
+        for (auto it = scrollSpeed.constBegin(); it != scrollSpeed.constEnd(); ++it)
+        {
+            // eg: easy: 1.6
+            _scrollSpeeds += it.key() + ": " + QString::number(it.value()) + "\n";
+        }
+
+        return division + "事件数量: " + QString::number(eventCount) + "\n版本: " + version
+                          + "\n铺面由: " + generatedBy + " 生成" + "\n" + _scrollSpeeds
+                          + difficulties.toString() + "\n" + division + "\n\n";
+    }
+
+    QString oneToString(const QString& id) const override
+    {
+        return "";
+    }
+
+    void from_json(const json& j);
 };
 
-// NoteParamData 的 from_json
-inline void from_json(const json& j, NoteParamData& p) {
-    if (j.contains("n")) p.name = j["n"].get<std::string>();
-    if (j.contains("v")) p.value = j["v"];
-}
-
-// SongNoteData 的 from_json
-inline void from_json(const json& j, SongNoteData& note) {
-    if (j.contains("t")) note.time = j["t"].get<double>();
-    if (j.contains("d")) note.data = j["d"].get<int>();
-    if (j.contains("l")) note.length = j["l"].get<double>();
-    if (j.contains("k")) note.kind = j["k"].get<std::string>();
-    if (j.contains("p") && j["p"].is_array()) {
-        note.params = j["p"].get<std::vector<NoteParamData>>();
-    }
-}
-
-// SongEventData 的 from_json
-inline void from_json(const json& j, SongEventData& event) {
-    if (j.contains("t")) event.time = j["t"].get<double>();
-    if (j.contains("e")) event.eventKind = j["e"].get<std::string>();
-    if (j.contains("v")) event.value = j["v"];
-}
-
-// SongChartData 的 from_json，调用这个函数即可一键完成解析！
-inline void from_json(const json& j, SongChartData& chart) {
-    // version
-    if (j.contains("version")) {
-        chart.version = j["version"].get<std::string>();
-    }
-
-    // generatedBy
-    if (j.contains("generatedBy")) {
-        chart.generatedBy = j["generatedBy"].get<std::string>();
-    }
-
-    // scrollSpeed: Map<String, Float>
-    if (j.contains("scrollSpeed") && j["scrollSpeed"].is_object()) {
-        for (auto& [key, val] : j["scrollSpeed"].items()) {
-            chart.scrollSpeed[key] = val.get<double>();
-        }
-    }
-
-    // events: Array<SongEventData>
-    if (j.contains("events") && j["events"].is_array()) {
-        chart.events = j["events"].get<std::vector<SongEventData>>();
-    }
-
-    // notes: Map<String, Array<SongNoteData>>
-    // 我们也不用手动操作Difficulty结构了，直接一键解析完成了
-    if (j.contains("notes") && j["notes"].is_object()) {
-        for (auto& [difficulty, notesArray] : j["notes"].items()) {
-            if (notesArray.is_array()) {
-                chart.difficulties.notes[difficulty] = notesArray.get<std::vector<SongNoteData>>();
-            }
-        }
-    }
-
-    // variation 不在 JSON 中，由代码填充，用于存储到Song对象的difficulty里面
-}
-
+/**
+ * SongDataParser - 负责解析和版本迁移
+ * 解析逻辑全部移动到 .cpp 文件中
+ */
 class SongDataParser {
-    static SongTimeFormat SongTimeFormat_from_json_VS(const json& j);
-
-    static SongTimeChange SongTimeChange_from_json_VS(const json& j) {
-        SongTimeChange t;
-        if (j.contains("t")) t.timeStamp = j["t"].get<double>();
-        if (j.contains("b")) t.beatTime = j["b"].get<double>();
-        if (j.contains("bpm")) t.bpm = j["bpm"].get<double>();
-        if (j.contains("n")) t.timeSignatureNum = j["n"].get<int>();
-        if (j.contains("d")) t.timeSignatureDen = j["d"].get<int>();
-        if (j.contains("bt")) t.beatTuplets = j["bt"].get<std::vector<int>>();
-        return t;
-    }
-
-    static SongOffsets SongOffsets_from_json_VS(const json& j) {
-        SongOffsets o;
-        if (j.contains("instrumental")) o.instrumental = j["instrumental"].get<double>();
-        if (j.contains("altInstrumentals")) {
-            for (auto& [key, val] : j["altInstrumentals"].items()) {
-                o.altInstrumentals[key] = val.get<double>();
-            }
-        }
-        if (j.contains("vocals")) {
-            for (auto& [key, val] : j["vocals"].items()) {
-                o.vocals[key] = val.get<double>();
-            }
-        }
-        if (j.contains("altVocals")) {
-            for (auto& [key, val] : j["altVocals"].items()) {
-                for (auto& [charKey, charVal] : val.items()) {
-                    o.altVocals[key][charKey] = charVal.get<double>();
-                }
-            }
-        }
-        return o;
-    }
-
-    static SongCharacterData SongCharacterData_from_json_VS(const json& j);
-
-    static SongPlayData SongPlayData_from_json_VS(const json& j);
-
-    // ==================== 2.0.x 解析和迁移 ====================
-    static SongMetadata_v2_0_0 SongMetadata_v2_0_0_from_json(const json& j);
-
-    static SongMetaData migrate_v2_0_to_v2_2(const SongMetadata_v2_0_0& old) {
-        SongMetaData m;
-        m.version = "2.2.4";
-        m.songName = old.songName;
-        m.artist = old.artist;
-        m.charter = old.charter;
-        m.divisions = old.divisions;
-        m.looped = old.looped;
-        m.offsets = old.offsets;
-        m.generatedBy = old.generatedBy;
-        m.timeFormat = old.timeFormat;
-        m.timeChanges = old.timeChanges;
-
-        // 将顶层字段迁移到 playData
-        m.playData.difficulties = old.difficulties;
-        m.playData.characters = old.characters;
-        m.playData.stage = old.stage;
-        m.playData.noteStyle = old.noteStyle;
-        m.playData.ratings = old.ratings;
-
-        // 2.2.x 新增字段，设置默认值
-        m.playData.songVariations = {};
-        m.playData.previewStart = 0;
-        m.playData.previewEnd = 15000;
-        m.playData.album = std::nullopt;
-        m.playData.stickerPack = std::nullopt;
-
-        return m;
-    }
-
-    // ==================== 2.1.x 解析和迁移 ====================
-    static SongMetadata_v2_1_0 SongMetadata_v2_1_0_from_json(const json& j) {
-        SongMetadata_v2_1_0 m;
-
-        if (j.contains("version")) m.version = j["version"].get<std::string>();
-        if (j.contains("songName")) m.songName = j["songName"].get<std::string>();
-        if (j.contains("artist")) m.artist = j["artist"].get<std::string>();
-        if (j.contains("charter")) m.charter = j["charter"].get<std::string>();
-        if (j.contains("divisions")) m.divisions = j["divisions"].get<int>();
-        if (j.contains("looped")) m.looped = j["looped"].get<bool>();
-        if (j.contains("offsets")) m.offsets = SongOffsets_from_json_VS(j["offsets"]);
-        if (j.contains("playData")) m.playData = SongPlayData_from_json_VS(j["playData"]);
-        if (j.contains("generatedBy")) m.generatedBy = j["generatedBy"].get<std::string>();
-        if (j.contains("timeFormat")) m.timeFormat = SongTimeFormat_from_json_VS(j["timeFormat"]);
-        if (j.contains("timeChanges") && j["timeChanges"].is_array()) {
-            for (const auto& item : j["timeChanges"]) {
-                m.timeChanges.push_back(SongTimeChange_from_json_VS(item));
-            }
-        }
-
-        return m;
-    }
-
-    static SongMetaData migrate_v2_1_to_v2_2(const SongMetadata_v2_1_0& old) {
-        SongMetaData m;
-        m.version = "2.2.4";
-        m.songName = old.songName;
-        m.artist = old.artist;
-        m.charter = old.charter;
-        m.divisions = old.divisions;
-        m.looped = old.looped;
-        m.offsets = old.offsets;
-        m.playData = old.playData;
-        m.generatedBy = old.generatedBy;
-        m.timeFormat = old.timeFormat;
-        m.timeChanges = old.timeChanges;
-
-        // 补全 2.2.x 新增的字段（如果缺失）
-        if (!m.playData.album.has_value()) {
-            m.playData.album = std::nullopt;
-        }
-        if (!m.playData.stickerPack.has_value()) {
-            m.playData.stickerPack = std::nullopt;
-        }
-
-        return m;
-    }
-
-    // ==================== 2.2.x 直接解析 ====================
-    static SongMetaData parseMetadata_v2_2_x(const json& j) {
-        SongMetaData m;
-
-        if (j.contains("version")) m.version = j["version"].get<std::string>();
-        if (j.contains("songName")) m.songName = j["songName"].get<std::string>();
-        if (j.contains("artist")) m.artist = j["artist"].get<std::string>();
-        if (j.contains("charter")) m.charter = j["charter"].get<std::string>();
-        if (j.contains("divisions")) m.divisions = j["divisions"].get<int>();
-        if (j.contains("looped")) m.looped = j["looped"].get<bool>();
-        if (j.contains("offsets")) m.offsets = SongOffsets_from_json_VS(j["offsets"]);
-        if (j.contains("playData")) m.playData = SongPlayData_from_json_VS(j["playData"]);
-        if (j.contains("generatedBy")) m.generatedBy = j["generatedBy"].get<std::string>();
-        if (j.contains("timeFormat")) m.timeFormat = SongTimeFormat_from_json_VS(j["timeFormat"]);
-        if (j.contains("timeChanges") && j["timeChanges"].is_array()) {
-            for (const auto& item : j["timeChanges"]) {
-                m.timeChanges.push_back(SongTimeChange_from_json_VS(item));
-            }
-        }
-
-        return m;
-    }
-
 public:
     // 外部只需要调用这个就可以直接解析！（返回值是optional的都自带记录错误，因此你无需再log异常）
-    static std::optional<SongMetaData> parseSongMetaData(const json& j, const std::string& filename = "") {
-        semver::version current_version;
-        std::string versionStr = "2.2.4";
-
-        if (j.contains("version") && j["version"].is_string()) {
-            versionStr = j["version"].get<std::string>();
-        }
-
-        auto parseResult = semver::parse(versionStr, current_version);
-        if (!parseResult) {
-            Exception::logVersionInvalid(versionStr, SongRegistryRelative::SONG_METADATA_VERSION_RULE, filename);
-            return std::nullopt;
-        }
-
-        semver::version v2_3_0, v2_1_0, v2_2_0, v2_0_0;
-        semver::parse("2.2.0", v2_2_0);
-        semver::parse("2.3.0", v2_3_0);
-        semver::parse("2.1.0", v2_1_0);
-        semver::parse("2.0.0", v2_0_0);
-
-        // 根据版本路由
-        if (current_version >= v2_2_0 && current_version < v2_3_0) {
-            // 2.2.x：直接解析
-            return parseMetadata_v2_2_x(j);
-        }
-        else if (current_version >= v2_1_0 && current_version < v2_2_0) {
-            // 2.1.x：解析旧结构到迁移
-            auto old = SongMetadata_v2_1_0_from_json(j);
-            return migrate_v2_1_to_v2_2(old);
-        }
-        else if (current_version >= v2_0_0 && current_version < v2_1_0) {
-            // 2.0.x：解析旧结构 → 迁移
-            auto old = SongMetadata_v2_0_0_from_json(j);
-            return migrate_v2_0_to_v2_2(old);
-        }
-        else {
-            // 不支持的版本
-            Exception::logVersionInvalid(versionStr, SongRegistryRelative::SONG_METADATA_VERSION_RULE, filename);
-            return std::nullopt;
-        }
-    }
+    static std::optional<SongMetaData> parseSongMetaData(const json& j, const QString& filename = "");
 
     // 目前还没有看到和版本号有关的迁移内容，因此我推断他应该没有太大的变动，因此不提供迁移逻辑
-    static SongChartData parseSongChartData(const json& j, const std::string& filename = "")
-    {
-        SongChartData s;
-        from_json(j,s);
-        return s;
-    }
+    static SongChartData parseSongChartData(const json& j, const QString& filename = "");
 };

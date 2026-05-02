@@ -14,7 +14,7 @@ enum class ModParseExcpetionType
     BadJSONGrammer,
     OpenFileFail,
     GetWeekSongFailed,
-    Unkown,
+    Unknown,
 };
 
 /**
@@ -30,6 +30,7 @@ public:
     static void logNullPointerException(const string& message,const string& functionName,int atLine);
     static void logParseModException(ModParseExcpetionType excpetionType,const QString& file);
     static void logVersionInvalid(const string& versionProvided,const string& versionNeeded,const string& fileName);
+    static void logVersionInvalid(const QString& versionProvided, const QString& versionNeeded, const QString& fileName);
     // 为了防止我写错逻错故意设置的自杀行为
     static void wrongParamException(const QString& msg,const QString& functionName, const int atLine);
 };

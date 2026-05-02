@@ -9,7 +9,7 @@
 using FunkinPath = QString;
 
 // 对应VS data目录下的文件（参考自VS Sky Redux，可能少了些东西？不知道）
-enum class ResourceType
+enum class DataResourceType
 {
 	character,
 	dialogue,
@@ -62,13 +62,22 @@ public:
 	static QVector<QString> getAllModFolderPaths();
 
 	/**
-	 * 获取数据目录下的一些内容
+	 * 获取数据目录下的一些内容，返回值比如（省掉了前面的内容）"coolmod/data/characters")
 	 * @param type 资源类型
 	 * @param modAbsolutePath 模组根目录绝对路径
 	 * @return 构造好的路径，如果您传入了错误的数据，会导致异常，程序终止防止你写错。
 	 */
-	static QString getVSDataPath(ResourceType type, const QString& modAbsolutePath);
+	static QString getVSDataPath(DataResourceType type, const QString& modAbsolutePath);
 
-	static 
+	/**
+	 * 获取ogg或mp3文件所在位置
+	 * @param modAbsolutePath 模组根目录
+	 * @param songId 歌曲id
+	 * @return mp3或ogg所在目录（不包括文件自身）
+	 */
+	static QString getVSSongFilePath(const QString& modAbsolutePath,const QString& songId)
+	{
+		return modAbsolutePath + QDir::separator() + "songs" + QDir::separator() + songId;
+	}
 };
 

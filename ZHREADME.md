@@ -56,15 +56,22 @@
 * rc: windows图标文件。
 
 ## 📄 许可证
-Qt的
+GPL
 
 ## 📸 截图
 * 模组选择界面
 <img src="./DocumentImages/ScreenShots/ModSelectScreen.png" width="1000" alt="ModSelect">
+
+## 📚使用的库
+* [miniaudio/stbvorbis](https://miniaud.io/): 负责底层音频播放
+* [nlohmann](https://json.nlohmann.me/): json文件解析
+* [pugixml](https://pugixml.org/): xml文件解析
+* [semver](https://semver.org/): 字符串版本规则解析
 
 ## 💬 联系作者
 https://space.bilibili.com/533393738?spm_id_from=333.1007.0.0
 
 ## 📜 鸣谢
 * [Friday Night Funkin'](https://github.com/ninjamuffin99/Funkin) - 感谢原作者团队带来的伟大作品。
+* [Psych Engine](https://github.com/ShadowMario/FNF-PsychEngine/releases) - 源码参考与设计模式
 * 以及所有开源社区提供的技术灵感。

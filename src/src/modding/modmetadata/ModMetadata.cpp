@@ -7,8 +7,8 @@
 
 ModMetadata::ModMetadata()
 {
-    description = LangStringPool::instance()->noDescription().toStdString();
-    title = LangStringPool::instance()->untitledMod().toStdString();
+    description = LangStringPool::instance()->noDescription();
+    title = LangStringPool::instance()->untitledMod();
     iconPath = std::nullopt;
 }
 
@@ -18,11 +18,11 @@ QString ModMetadata::getMainInfoString() const
     auto pool = LangStringPool::instance();
 
     if (description.has_value())
-        extraInfoStr += pool->description() + QString::fromStdString(description.value()) + "<br/>";
+        extraInfoStr += pool->description() + description.value() + "<br/>";
     if (contributors.has_value())
-        extraInfoStr += pool->contributor() + QString::fromStdString(contributors.value()) + "<br/>";
+        extraInfoStr += pool->contributor() + contributors.value() + "<br/>";
     if (homepage.has_value())
-        extraInfoStr += pool->homepage() + QString::fromStdString(homepage.value()) + "<br/>";
+        extraInfoStr += pool->homepage() + homepage.value() + "<br/>";
 
     return extraInfoStr;
 }
@@ -34,15 +34,15 @@ QString ModMetadata::getExtraInfoString() const
     auto pool = LangStringPool::instance();
 
     if (apiVersion.has_value())
-        extraInfoStr += LangStringPool::instance()->modNeedEngineVersion() + QString::fromStdString(apiVersion.value()) + "<br/>";
+        extraInfoStr += LangStringPool::instance()->modNeedEngineVersion() + apiVersion.value() + "<br/>";
     if (modVersion.has_value())
-        extraInfoStr += LangStringPool::instance()->modVersion() + QString::fromStdString(modVersion.value()) + "<br/>";
+        extraInfoStr += LangStringPool::instance()->modVersion() + modVersion.value() + "<br/>";
     if (dependencies.has_value())
     {
         extraInfoStr += "<br/>" + pool->modOptionalDependencies();
         for (auto [name,rule] : dependencies.value().asKeyValueRange())
         {
-            extraInfoStr += QString::fromStdString(name) + "  " + pool->version() + QString::fromStdString(rule) + "<br/>";
+            extraInfoStr += name + "  " + pool->version() + rule + "<br/>";
         }
     }
     if (optionalDependencies.has_value())
@@ -50,7 +50,7 @@ QString ModMetadata::getExtraInfoString() const
         extraInfoStr += "<br/>" + pool->modOptionalDependencies();
         for (auto [name,rule] : optionalDependencies.value().asKeyValueRange())
         {
-            extraInfoStr += QString::fromStdString(name) + "  " + pool->version() + QString::fromStdString(rule) + "<br/>";
+            extraInfoStr += name + "  " + pool->version() + rule + "<br/>";
         }
     }
 

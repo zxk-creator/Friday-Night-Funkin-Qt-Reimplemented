@@ -4,7 +4,7 @@ set(CPACK_PACKAGE_NAME "Quark Engine")
 
 include(qt.cmake)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Core)
@@ -65,6 +65,12 @@ set(PROJECT_SOURCES
         src/include/utils/message/MessageHandler.h
         src/include/utils/interseting/InterestingThings.h
         src/include/play/event/IHookEvents.h
+        src/include/play/ISerializable.h
+        src/include/utils/extension/ExtendJSONParse.h
+        src/include/data/character/CharacterData.h
+        src/src/data/character/CharacterData.cpp
+        src/src/utils/file/FileUtil.cpp
+        src/include/data/character/CharacterRegistry.h
 )
 
 set(CMAKE_AUTORCC ON)
@@ -74,6 +80,15 @@ if(QT_VERSION VERSION_LESS 5.15)
 elseif(QT_VERSION VERSION_LESS 6.2)
     qt_add_resources(PROJECT_SOURCES qml.qrc)
 endif()
+
+
+
+# ===================== 避免野指针的利器ASan ================================
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address -g -O0")
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=address")
+# =============== 对所有的都生效，记得Release版本删掉他们！ =====================
+
+
 
 qt_add_executable(${PROJECT_NAME} ${PROJECT_SOURCES})
 

@@ -45,22 +45,35 @@ class MessageHandler : QObject
     }
 
 public:
-
+    /**
+     * 任何一个方法都不用加上"提示"等前缀，我这里已经加好了。
+     */
     static void logInfo(QString msg)
     {
-        addMessage(ErrType::Info,msg);
+        QString i = "提示: " + msg;
+        addMessage(ErrType::Info,i);
         qInfo() << msg;
     }
 
     static void logWarning(QString msg)
     {
-        addMessage(ErrType::Warning,msg);
+        QString w = "警告: " + msg;
+        addMessage(ErrType::Warning,w);
         qWarning() << msg;
+    }
+
+    static void logWarning(std::string msg)
+    {
+        std::string e = "错误: " + msg;
+        QString res = QString::fromStdString(e);
+        addMessage(ErrType::Warning,res);
+        qWarning() << res;
     }
 
     static void logError(QString msg)
     {
-        addMessage(ErrType::Error,msg);
+        QString e = "错误: " + msg;
+        addMessage(ErrType::Error,e);
         qCritical() << msg;
     }
 

@@ -20,11 +20,16 @@ public:
     /**
      *  真正扫描一个模组文件夹里面的东西！您只需要调用这个即可
      *  支持PE和VS，自动加载！
-     *  @param modAbsolutePath: 传入模组的绝对路径
-     *  @param modMetadata: scanModMetadata的返回值
+     *  @param modMetadatas 要扫描的模组的元数据
      *  没有返回值，自动注册到注册表中，开始玩了才会加载
      */
     static void scanAllMods(const QVector<ModMetadata>& modMetadatas);
+
+    /**
+     * 解析单个模组，适用于查看模组详情界面
+     * @param modMetadata 要扫描的模组元数据
+     */
+    static void scanOneMod(const ModMetadata& modMetadata);
 
 private:
     /**
@@ -35,8 +40,8 @@ private:
      * TODO: CNE在HScript解释器写出来之前，估计这里是不会给他适配了
      */
     static bool parseWeeks(const ModMetadata& modMetadata);
-    static bool parseCharacters(const ModMetadata& modMetadata);
     static bool parseSongs(const ModMetadata& modMetadata);
+    static bool parseCharacters(const ModMetadata& modMetadata);
     static bool parseStages(const ModMetadata& modMetadata);
     static bool parseNotestyles(const ModMetadata& modMetadata);
     // TODO:dialogue，ui（官方引擎freeplay里面的），stickerpack（官方引擎）暂时用不到，所以不写了！

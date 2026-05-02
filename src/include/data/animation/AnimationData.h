@@ -12,7 +12,7 @@
 
 using json = nlohmann::json;
 
-struct UnnamedAnimationData {
+struct UnnamedAnimationData : ISerializable{
     std::optional<std::string> prefix;
     std::optional<std::string> assetPath;
     std::vector<float> offsets = {0, 0};
@@ -24,50 +24,87 @@ struct UnnamedAnimationData {
     std::string animType = "framelabel";
     std::string renderType;
     std::optional<TextureAtlasData> atlasSettings;
+
+    void from_json(const json& j) {
+        if (j.contains("prefix")) prefix = j["prefix"].get<std::string>();
+        if (j.contains("assetPath")) assetPath = j["assetPath"].get<std::string>();
+        if (j.contains("offsets")) offsets = j["offsets"].get<std::vector<float>>();
+        if (j.contains("looped")) looped = j["looped"].get<bool>();
+        if (j.contains("flipX")) flipX = j["flipX"].get<bool>();
+        if (j.contains("flipY")) flipY = j["flipY"].get<bool>();
+        if (j.contains("frameRate")) frameRate = j["frameRate"].get<int>();
+        if (j.contains("frameIndices")) frameIndices = j["frameIndices"].get<std::vector<int>>();
+        if (j.contains("animType")) animType = j["animType"].get<std::string>();
+        if (j.contains("renderType")) renderType = j["renderType"].get<std::string>();
+        if (j.contains("atlasSettings")) {
+            TextureAtlasData t;
+            t.from_json(j["atlasSettings"]);
+            atlasSettings = t;
+        }
+    }
+
+    QString toString() const override
+    {
+        QString res;
+        res += "动画类型: " + QString::fromStdString(animType) + "\n";
+
+        if (prefix.has_value()) {
+            res += "前缀: " + QString::fromStdString(prefix.value()) + "\n";
+        }
+        if (assetPath.has_value()) {
+            res += "资源路径: " + QString::fromStdString(assetPath.value()) + "\n";
+        }
+
+        res += "偏移: [" + QString::number(offsets[0]) + ", " + QString::number(offsets[1]) + "]\n";
+        res += "循环: " + QString(looped ? "是" : "否") + "\n";
+        res += "水平翻转: " + QString(flipX ? "是" : "否") + "\n";
+        res += "垂直翻转: " + QString(flipY ? "是" : "否") + "\n";
+        res += "帧率: " + QString::number(frameRate) + "\n";
+
+        if (!frameIndices.empty()) {
+            res += "帧索引: [";
+            for (size_t i = 0; i < frameIndices.size(); ++i) {
+                res += QString::number(frameIndices[i]);
+                if (i < frameIndices.size() - 1) res += ", ";
+            }
+            res += "]\n";
+        }
+
+        res += "渲染类型: " + QString::fromStdString(renderType) + "\n";
+
+        if (atlasSettings.has_value()) {
+            res += "--- 图集设置 ---\n";
+            res += atlasSettings.value().toString();
+        }
+
+        return res;
+    }
+
+    QString oneToString(const QString& id) const override
+    {
+        return toString();
+    }
 };
 
-struct AnimationData : public UnnamedAnimationData {
+struct AnimationData : UnnamedAnimationData, ISerializable{
     std::string name;
+
+    void from_json(const json& j) {
+        // 先调用父类的 from_json
+        UnnamedAnimationData::from_json(j);
+        // 再解析自己的成员
+        if (j.contains("name")) name = j["name"].get<std::string>();
+    }
+
+    QString toString() const override
+    {
+        QString res = "动画名称: " + QString::fromStdString(name) + "\n";
+        res += UnnamedAnimationData::toString();
+        return res;
+    }
+
+    QString oneToString(const QString& id) const override
+    {
+        return toString();
+    }
 };
-
-// 无名结构体转换
-inline void to_json(json& j, const UnnamedAnimationData& data) {
-    if (data.prefix.has_value()) j["prefix"] = data.prefix.value();
-    if (data.assetPath.has_value()) j["assetPath"] = data.assetPath.value();
-    j["offsets"] = data.offsets;
-    j["looped"] = data.looped;
-    j["flipX"] = data.flipX;
-    j["flipY"] = data.flipY;
-    j["frameRate"] = data.frameRate;
-    if (!data.frameIndices.empty()) j["frameIndices"] = data.frameIndices;
-    j["animType"] = data.animType;
-    if (!data.renderType.empty()) j["renderType"] = data.renderType;
-    if (data.atlasSettings.has_value()) j["atlasSettings"] = data.atlasSettings.value();
-}
-
-// 没名结构体序列化json
-inline void from_json(const json& j, UnnamedAnimationData& data) {
-    if (j.contains("prefix")) data.prefix = j["prefix"].get<std::string>();
-    if (j.contains("assetPath")) data.assetPath = j["assetPath"].get<std::string>();
-    if (j.contains("offsets")) data.offsets = j["offsets"].get<std::vector<float>>();
-    if (j.contains("looped")) data.looped = j["looped"].get<bool>();
-    if (j.contains("flipX")) data.flipX = j["flipX"].get<bool>();
-    if (j.contains("flipY")) data.flipY = j["flipY"].get<bool>();
-    if (j.contains("frameRate")) data.frameRate = j["frameRate"].get<int>();
-    if (j.contains("frameIndices")) data.frameIndices = j["frameIndices"].get<std::vector<int>>();
-    if (j.contains("animType")) data.animType = j["animType"].get<std::string>();
-    if (j.contains("renderType")) data.renderType = j["renderType"].get<std::string>();
-    if (j.contains("atlasSettings")) data.atlasSettings = j["atlasSettings"].get<TextureAtlasData>();
-}
-
-// AnimationDataJSON转换
-inline void to_json(json& j, const AnimationData& data) {
-    to_json(j, static_cast<const UnnamedAnimationData&>(data));
-    j["name"] = data.name;
-}
-
-inline void from_json(const json& j, AnimationData& data)
-{
-    from_json(j, static_cast<UnnamedAnimationData&>(data));
-    data.name = j.at("name").get<std::string>();
-}
