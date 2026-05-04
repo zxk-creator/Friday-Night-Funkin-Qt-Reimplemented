@@ -9,6 +9,7 @@
 #include "data/level/LevelData.h"
 #include "utils/VersionUtil.h"
 #include "data/level/LevelRegistry.h"
+#include "data/mod/ModRegistry.h"
 #include "data/song/SongData.h"
 #include "data/song/SongRegistry.h"
 #include "play/song/Song.h"
@@ -25,47 +26,42 @@ ModEngineType ModScanUtils::judgeModEngine(const QString& modAbsolutePath)
 {
     QDir modDir(modAbsolutePath);
     QFileInfo modInfo(modDir.absolutePath());
-    MessageHandler::logInfo("传入的路径是: " + modDir.absolutePath());
+    MessageHandler::logInfo("传入的路径是: " + modDir.absolutePath(), "ModScanUtils");
     QString PECoreCfg = "pack.json";
     QString VSCoreCfg = "_polymod_meta.json";
     if (QFile::exists(modDir.filePath(PECoreCfg)))
     {
-        MessageHandler::logInfo(modInfo.fileName() + "是PE模组！");
+        MessageHandler::logInfo(modInfo.fileName() + "是PE模组！", "ModScanUtils");
         return ModEngineType::PE;
     }
     if (QFile::exists(modDir.filePath(VSCoreCfg)))
     {
-        MessageHandler::logInfo(modInfo.fileName() + "是V-Slice模组！");
+        MessageHandler::logInfo(modInfo.fileName() + "是V-Slice模组！", "ModScanUtils");
         return ModEngineType::VS;
     }
 
-    MessageHandler::logWarning(modInfo.fileName() + "没找到合适的配置文件！因此我默认他为PE。");
+    MessageHandler::logWarning(modInfo.fileName() + "没找到合适的配置文件！因此我默认他为PE。", "ModScanUtils");
     return ModEngineType::PE;
 }
 
 // 真正意义上解析模组！
 // TODO: Linux上大小写敏感，icon.png和icon.PNG完全是两个东西。等出问题了再修吧:)
-optional<ModMetadata> ModScanUtils::scanPEModMetadata(QString& modAbsolutePath)
+void ModScanUtils::scanPEModMetadata(QString& modAbsolutePath)
 {
-    ModMetadata modMetadata{};
-    modMetadata.modPath = modAbsolutePath;
-    modMetadata.engineType = ModEngineType::PE;
+    auto modMetadata = make_unique<ModMetadata>();
+    modMetadata->modPath = modAbsolutePath;
+    modMetadata->engineType = ModEngineType::PE;
 
     QDir modDir(modAbsolutePath);
     QString cfgPath = modDir.filePath("pack.json");
     if (!QFile::exists(cfgPath))
-    {
-        MessageHandler::logWarning(modAbsolutePath + "没有pack.json!不过我仍旧尝试解析他...");
-        return modMetadata;
-    }
+        MessageHandler::logWarning(modAbsolutePath + "没有pack.json!不过我仍旧尝试解析他...", "ModScanUtils");
+
 
     QFile cfgFile(cfgPath);
     QFileInfo dirName(modDir.absolutePath());
     if (!cfgFile.open(QIODevice::ReadOnly | QIODevice::Text))
-    {
-        MessageHandler::logWarning(dirName.fileName() + "无法解析pack.json文件，不过我仍旧尝试解析他");
-        return modMetadata;
-    }
+        MessageHandler::logWarning(dirName.fileName() + "无法解析pack.json文件，不过我仍旧尝试解析他", "ModScanUtils");
 
     try {
         // 真正解析模组
@@ -73,14 +69,18 @@ optional<ModMetadata> ModScanUtils::scanPEModMetadata(QString& modAbsolutePath)
         // 忽略注释和多余逗号
         auto j = nlohmann::json::parse(rawJSON, nullptr, true, true);
 
-        modMetadata.title = QString::fromStdString(j.value("name", LangStringPool::instance()->untitledMod().toStdString()));
-        modMetadata.description = QString::fromStdString(j.value("description", LangStringPool::instance()->noDescription().toStdString()));
-        modMetadata.restart = j.value("restart", false);
-        modMetadata.runsGlobally = j.value("runsGlobally", false);
+        modMetadata->title = QString::fromStdString(j.value("name", LangStringPool::instance()->untitledMod().toStdString()));
+        modMetadata->description = QString::fromStdString(j.value("description", LangStringPool::instance()->noDescription().toStdString()));
+        modMetadata->restart = j.value("restart", false);
+        modMetadata->runsGlobally = j.value("runsGlobally", false);
 
-        // 修复 bgRGBColor 解析
+        optional<QString> id = FileUtil::getPathLeaf(modAbsolutePath);
+        if (!id.has_value()) id = "Unnamed";
+        modMetadata->id = id;
+
+
         if (j.contains("color") && j["color"].is_array()) {
-            modMetadata.bgRGBColor = j["color"].get<vector<int>>();
+            modMetadata->bgRGBColor = j["color"].get<vector<int>>();
         }
 
         QString normalIconPath = modDir.filePath("pack.png");
@@ -88,36 +88,41 @@ optional<ModMetadata> ModScanUtils::scanPEModMetadata(QString& modAbsolutePath)
         QFileInfo normalIconInfo(normalIconPath);
         QFileInfo pixelIconInfo(pixelIconPath);
         if (normalIconInfo.exists())
-            modMetadata.iconPath = normalIconPath;
+            modMetadata->iconPath = normalIconPath;
         else if (pixelIconInfo.exists())
-            modMetadata.iconPath = pixelIconPath;
+            modMetadata->iconPath = pixelIconPath;
         else
-            modMetadata.iconPath = nullopt;
+            modMetadata->iconPath = nullopt;
 
-        qInfo() << modMetadata.toString();
-        return modMetadata;
+        MessageHandler::logInfo(modMetadata->toString(), "ModScanUtils");
+
+        // 最终注册
+        ModRegistry::instance()->addEntry(id.value(),std::move(modMetadata));
     }
     catch (const std::exception& e)
     {
-        MessageHandler::logError(QString("解析" + modAbsolutePath + "时发生异常：") + e.what() + "已跳过。" + "\n");
-        return nullopt;
+        MessageHandler::logError(QString("解析" + modAbsolutePath + "时发生异常：") + e.what() + "已跳过。" + "\n", "ModScanUtils");
     }
 }
 
 // TODO: Linux上大小写敏感，icon.png和icon.PNG完全是两个东西。等出问题了再修吧:)
-optional<ModMetadata> ModScanUtils::scanVSModMetadata(QString& modAbsolutePath)
+void ModScanUtils::scanVSModMetadata(QString& modAbsolutePath)
 {
-    ModMetadata modMetadata{};
-    modMetadata.modPath = modAbsolutePath;
-    modMetadata.engineType = ModEngineType::VS;
+    auto modMetadata = make_unique<ModMetadata>();
+    modMetadata->modPath = modAbsolutePath;
+    modMetadata->engineType = ModEngineType::VS;
+
+    optional<QString> id = FileUtil::getPathLeaf(modAbsolutePath);
+    if (!id.has_value()) id = "Unnamed";
+    modMetadata->id = id;
 
     QDir modDir(modAbsolutePath);
     QString cfgPath = modDir.filePath("_polymod_meta.json");
     QString iconPath = modDir.filePath("_polymod_icon.png");
     if (!QFile::exists(cfgPath))
     {
-        MessageHandler::logWarning(modAbsolutePath + "没有_polymod_meta.json！此模组无效。");
-        return nullopt;
+        MessageHandler::logWarning(modAbsolutePath + "没有_polymod_meta.json！此模组无效。", "ModScanUtils");
+        return;
     }
 
     QFile cfgFile(cfgPath);
@@ -125,74 +130,67 @@ optional<ModMetadata> ModScanUtils::scanVSModMetadata(QString& modAbsolutePath)
     QFileInfo iconInfo(iconPath);
     if (!cfgFile.open(QIODevice::ReadOnly | QIODevice::Text))
     {
-        MessageHandler::logWarning(dirName.fileName() + "无法解析_polymod_meta.json文件！此模组无效。");
-        return nullopt;
+        MessageHandler::logWarning(dirName.fileName() + "无法解析_polymod_meta.json文件！此模组无效。", "ModScanUtils");
+        return;
     }
 
     try {
         string rawJSON = cfgFile.readAll().toStdString();
         auto j = nlohmann::json::parse(rawJSON, nullptr, true, true);
 
-        modMetadata.title = QString::fromStdString(j.value("title", LangStringPool::instance()->untitledMod().toStdString()));
-        modMetadata.description = QString::fromStdString(j.value("description", LangStringPool::instance()->noDescription().toStdString()));
+        modMetadata->title = QString::fromStdString(j.value("title", LangStringPool::instance()->untitledMod().toStdString()));
+        modMetadata->description = QString::fromStdString(j.value("description", LangStringPool::instance()->noDescription().toStdString()));
 
-        // 修复 homepage - std::optional 的问题
         if (j.contains("homepage") && j["homepage"].is_string()) {
-            modMetadata.homepage = QString::fromStdString(j["homepage"].get<string>());
+            modMetadata->homepage = QString::fromStdString(j["homepage"].get<string>());
         }
 
-        // 修复 apiVersion
         if (j.contains("api_version") && j["api_version"].is_string()) {
             QString apiVer = QString::fromStdString(j["api_version"].get<string>());
-            modMetadata.apiVersion = "V-Slice " + apiVer;
+            modMetadata->apiVersion = "V-Slice " + apiVer;
         }
 
-        // 修复 modVersion
         if (j.contains("mod_version") && j["mod_version"].is_string()) {
-            modMetadata.modVersion = QString::fromStdString(j["mod_version"].get<string>());
+            modMetadata->modVersion = QString::fromStdString(j["mod_version"].get<string>());
         }
 
-        // 修复 license
         if (j.contains("license") && j["license"].is_string()) {
-            modMetadata.license = QString::fromStdString(j["license"].get<string>());
+            modMetadata->license = QString::fromStdString(j["license"].get<string>());
         }
 
-        // 处理模组图标
         if (iconInfo.exists())
         {
-            MessageHandler::logInfo(dirName.fileName() + "有图标!");
-            modMetadata.iconPath = iconPath;
+            MessageHandler::logInfo(dirName.fileName() + "有图标!", "ModScanUtils");
+            modMetadata->iconPath = iconPath;
         }
         else
         {
-            MessageHandler::logInfo(dirName.fileName() + "没有图标！");
+            MessageHandler::logInfo(dirName.fileName() + "没有图标！", "ModScanUtils");
         }
 
-        // 处理dependencies - 直接用 QString 键值对
         if (j.contains("dependencies") && j["dependencies"].is_object())
         {
             ModDependencies dependencyMap;
             for (auto& [key, val] : j["dependencies"].items()) {
                 dependencyMap.insert(QString::fromStdString(key), QString::fromStdString(val.get<string>()));
             }
-            modMetadata.dependencies = dependencyMap;
+            modMetadata->dependencies = dependencyMap;
         }
 
-        // 处理optionalDependencies
         if (j.contains("optionalDependencies") && j["optionalDependencies"].is_object())
         {
             ModDependencies dependencyMap;
             for (auto& [key, val] : j["optionalDependencies"].items()) {
                 dependencyMap.insert(QString::fromStdString(key), QString::fromStdString(val.get<string>()));
             }
-            modMetadata.optionalDependencies = dependencyMap;
+            modMetadata->optionalDependencies = dependencyMap;
         }
 
         // 处理嵌套的contributor数组，拼接成完整字符串！
         if (j.contains("contributors") && j["contributors"].is_array())
         {
             // 防止nullopt导致崩溃
-            QString currentStr = modMetadata.contributors.value_or(QString(""));
+            QString currentStr = modMetadata->contributors.value_or(QString(""));
 
             // 直接使用html进行类似网页设计！
             for (const auto& item : j["contributors"]) {
@@ -230,17 +228,16 @@ optional<ModMetadata> ModScanUtils::scanVSModMetadata(QString& modAbsolutePath)
                 entry += "</p>";
                 currentStr += entry;
             }
-            modMetadata.contributors = currentStr;
+            modMetadata->contributors = currentStr;
         }
 
-        qInfo() << modMetadata.toString();
-
-        return modMetadata;
+        qInfo() << modMetadata->toString();
+        // 注册！
+        ModRegistry::instance()->addEntry(id.value(),std::move(modMetadata));
     }
     catch (const std::exception& e)
     {
-        MessageHandler::logError(QString("解析" + modAbsolutePath + "时发生异常：") + e.what() + "已跳过。" + "\n");
-        return nullopt;
+        MessageHandler::logError(QString("解析" + modAbsolutePath + "时发生异常：") + e.what() + "已跳过。" + "\n", "ModScanUtils");
     }
 }
 
@@ -251,7 +248,7 @@ void ModScanUtils::scanAllMods(const QVector<ModMetadata>& modMetadatas)
         string levelName;
         // 按顺序来，不能错！
         if (parseWeeks(entry))
-            MessageHandler::logWarning("解析" + entry.modPath + "时出现问题，已跳过。");
+            MessageHandler::logWarning("解析" + entry.modPath + "时出现问题，已跳过。", "ModScanUtils");
 
         parseSongs(entry);
         parseStages(entry);
@@ -267,7 +264,7 @@ void ModScanUtils::scanOneMod(const ModMetadata& modMetadata)
 bool ModScanUtils::parseWeeks(const ModMetadata& modMetadata)
 {
     QString modAbsolutePath = modMetadata.modPath;
-    QString finalLevelDirPath = Path::getVSDataPath(DataResourceType::levels,modAbsolutePath);
+    QString finalLevelDirPath = Path::getVSDataPath(EDataResourceType::levels,modAbsolutePath);
 
     optional<QStringList> jsonFiles = FileUtil::getFileNames(finalLevelDirPath,"*.json");
     if (!jsonFiles.has_value()) return false;
@@ -294,7 +291,7 @@ bool ModScanUtils::parseSongs(const ModMetadata& modMetadata)
 {
     QString modAbsolutePath = modMetadata.modPath;
     // 接下来我们就得去songs目录下去找json了
-    QString songsRootPath = Path::getVSDataPath(DataResourceType::songs, modAbsolutePath);
+    QString songsRootPath = Path::getVSDataPath(EDataResourceType::songs, modAbsolutePath);
     QDir dir(songsRootPath);
     QStringList songsSubFolders = dir.entryList(QDir::Dirs | QDir::NoDotAndDotDot);
 
@@ -302,15 +299,17 @@ bool ModScanUtils::parseSongs(const ModMetadata& modMetadata)
         QString thisSongDataFolderPath = songsRootPath + QDir::separator() + songIdAndFolderName;
         QString defaultSongMetaFilePath = FileUtil::getDefaultSongMetaFilePath(thisSongDataFolderPath);
 
-        QString thisMetaFileName = FileUtil::getPathLeaf(defaultSongMetaFilePath);
+        optional<QString> thisMetaFileName = FileUtil::getPathLeaf(defaultSongMetaFilePath);
+        if (!thisMetaFileName.has_value())  continue;
+
         QString thisChartFilePath = FileUtil::getDefaultSongChartFilePath(thisSongDataFolderPath);
         try {
             // 先解析普通元数据文件
             json jMeta = json::parse(FileUtil::ReadFileToString(defaultSongMetaFilePath.toStdString()));
-            optional<SongMetaData> defaultMetadata = SongDataParser::parseSongMetaData(jMeta,thisMetaFileName);
+            optional<SongMetaData> defaultMetadata = SongDataParser::parseSongMetaData(jMeta,thisMetaFileName.value());
             // 先解析普通铺面文件
             json jChart = json::parse(FileUtil::ReadFileToString(thisChartFilePath).toStdString());
-            SongChartData defaultChartData = SongDataParser::parseSongChartData(jChart,thisMetaFileName);
+            SongChartData defaultChartData = SongDataParser::parseSongChartData(jChart,thisMetaFileName.value());
 
             if (!defaultMetadata.has_value()) continue;
             // 获得歌曲的变体名，并对其进行遍历
@@ -354,7 +353,7 @@ bool ModScanUtils::parseSongs(const ModMetadata& modMetadata)
                 }
                 catch (json::parse_error& e)
                 {
-                    LOG_JSON_PARSE_ERROR(e.what(),thisMetaFileName);
+                    MessageHandler::logError(" 异常已发生: "+ QString(e.what()) + "在" + songIdAndFolderName, "ModScanUtils::parseSongs");
                     continue;
                 }
             }
@@ -366,7 +365,7 @@ bool ModScanUtils::parseSongs(const ModMetadata& modMetadata)
         {
             QString why = e.what();
             QString res = "解析JSON时发生异常" + why;
-            MessageHandler::logError(why + res + "文件: " + songIdAndFolderName);
+            MessageHandler::logError(why + res + "文件: " + songIdAndFolderName, "ModScanUtils::parseSongs");
             continue;
         }
     }
@@ -378,7 +377,7 @@ bool ModScanUtils::parseCharacters(const ModMetadata& modMetadata)
 {
     QString modAbsolutePath = modMetadata.modPath;
     // 思路：找到data/character目录下的所有json文件并递归解析
-    QString characterDataPath = Path::getVSDataPath(DataResourceType::character,modAbsolutePath);
+    QString characterDataPath = Path::getVSDataPath(EDataResourceType::character,modAbsolutePath);
     optional<QStringList> allJsonFiles = FileUtil::getFileAbsolutePaths(characterDataPath,".json");
     if (!allJsonFiles.has_value()) return false;
 
@@ -400,7 +399,7 @@ bool ModScanUtils::parseCharacters(const ModMetadata& modMetadata)
         {
             QString why = e.what();
             QString res = "解析JSON时发生异常" + why;
-            MessageHandler::logError(why + res + "文件: " + file);
+            MessageHandler::logError(why + res + "文件: " + file, "ModScanUtils");
             continue;
         }
     }

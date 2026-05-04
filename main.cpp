@@ -7,6 +7,7 @@
 #include "modding/scan/ModManager.h"
 #include "utils/interseting/InterestingThings.h"
 #include "play/event/IHookEvents.h"
+#include "utils/Path.h"
 
 #ifdef Q_OS_ANDROID
 #include "permissions/GetAndroidStoragePermission.h"
@@ -17,6 +18,7 @@ inline void initQmlEngine(QQmlApplicationEngine &engine)
 {
     engine.rootContext()->setContextProperty("SoundSystem",FunkinSoundSystem::instance());
     engine.rootContext()->setContextProperty("ModManager",ModManager::instance());
+    engine.rootContext()->setContextProperty("PathUtil",PathUtil::instance());
     // 以后注册点别的
 }
 
@@ -45,7 +47,6 @@ int main(int argc, char *argv[])
     int* p = nullptr;
     *p = 42;
     */
-
     // printf("Hello World!");
 
 #if defined(Q_OS_WIN) && QT_VERSION_CHECK(5, 6, 0) <= QT_VERSION && QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
@@ -58,6 +59,7 @@ int main(int argc, char *argv[])
 
     #ifdef Q_OS_ANDROID
     requestAndroidPermission();
+    Path::copyAssets();
     #endif
 
     // 加载qml
@@ -68,10 +70,10 @@ int main(int argc, char *argv[])
     if (engine.rootObjects().isEmpty())
         return -1;
 
-    InterestingThings::damn();
+    InterestingThings::damn(false);
 
     // 测试：放首歌听听
-    auto test = new FunkinSound(false,":/mods/default/preload/music/freakyMenu/freakyMenu.ogg",ESoundType::uiSound,true,"freakyMenu");
+    auto test = new FunkinSound(false,Path::file("preload/music/freakyMenu/freakyMenu","MUSIC",""),ESoundType::uiSound,true,"freakyMenu");
     test->playSound();
 
     // 事件循环，防止执行到这窗口就没了

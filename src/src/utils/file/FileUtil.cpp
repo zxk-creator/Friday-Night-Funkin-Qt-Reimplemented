@@ -3,7 +3,7 @@
 //
 
 #include "utils/file/FileUtil.h"
-#include <QDebug>
+#include "utils/exception/CustomException.h"
 
 using namespace std;
 
@@ -114,9 +114,12 @@ QString FileUtil::getVariationSongChartFilePath(const QString& songPath, const Q
     return songPath + QDir::separator() + songId + "-chart" + "-" + variationId + ".json";
 }
 
-QString FileUtil::getPathLeaf(const QString& path)
+optional<QString> FileUtil::getPathLeaf(const QString& path)
 {
-    return path.section(QDir::separator(), -1);
+    QString res = path.section(QDir::separator(), -1);
+    if (res.isEmpty()) return nullopt;
+
+    return res;
 }
 
 QString FileUtil::getSongFullPath(const QString& modAbsolutePath, bool isInst,

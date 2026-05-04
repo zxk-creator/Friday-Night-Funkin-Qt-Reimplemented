@@ -1,15 +1,14 @@
 #pragma once
 #include "src/include/audio/SoundEnum.h"
-// 获取路径用
-#include <QFile>
 #include <qfileinfo.h>
+#include <qqmlintegration.h>
+
 #include "QDir"
-#include "exception/CustomException.h"
 
 using FunkinPath = QString;
 
 // 对应VS data目录下的文件（参考自VS Sky Redux，可能少了些东西？不知道）
-enum class DataResourceType
+enum class EDataResourceType
 {
 	character,
 	dialogue,
@@ -21,18 +20,31 @@ enum class DataResourceType
 	ui
 };
 
+enum class AssetType {
+	TEXT,
+	SOUND,
+	MUSIC,
+	IMAGE,
+	BINARY,
+	NONE
+};
+
 /**
   * @brief 全平台适用。Windows若安装在Program Files目录下需要管理员权限，Android若没有授予管理所有文件的权限，mod功能将无法使用。
   */
 class Path
 {
 public:
+	static inline QString currentLevel;
+
 	// 我们将使用Qt的文件系统来记录文件地址，先硬编码
-	static inline FunkinPath confirmSoundPath = ":/mods/default/sounds/confirmMenu.ogg";
-	static inline FunkinPath scrollSoundPath = ":/mods/default/sounds/scrollMenu.ogg";
-	static inline FunkinPath cancelSoundPath = ":/mods/default/sounds/cancelMenu.ogg";
-	static inline FunkinPath titleThemePath = ":/mods/default/sounds/titleTheme.ogg";
-	static inline FunkinPath infoSoundPath = ":/mods/default/sounds/boop.wav";
+	static inline FunkinPath confirmSoundPath;
+	static inline FunkinPath scrollSoundPath;
+	static inline FunkinPath cancelSoundPath;
+	static inline FunkinPath titleThemePath;
+	static inline FunkinPath infoSoundPath;
+
+	static inline bool isInitialized = false;
 
 	static FunkinPath getDefaultSoundPath(EDefaultSoundType soundType);
 
@@ -48,6 +60,18 @@ public:
 	 * @return D:/xxx 这样的绝对路径
 	 */
 	static QString getModDir();
+
+	/**
+	 * 获取资产目录，跨平台适用
+	 * @return 构造好的绝对路径
+	 */
+	static QString getAssetRoot();
+
+	/**
+	 * 适用于游戏启动，一启动就把资产拷贝到软件“私有”目录，因此启动前一定要调用一下这个。自带检查。
+	 * @return 是否成功
+	 */
+	static bool copyAssets();
 
 	/**
 	 * @brief 用于将qrc路径以及相对路径到到绝对路径
@@ -67,7 +91,7 @@ public:
 	 * @param modAbsolutePath 模组根目录绝对路径
 	 * @return 构造好的路径，如果您传入了错误的数据，会导致异常，程序终止防止你写错。
 	 */
-	static QString getVSDataPath(DataResourceType type, const QString& modAbsolutePath);
+	static QString getVSDataPath(EDataResourceType type, const QString& modAbsolutePath);
 
 	/**
 	 * 获取ogg或mp3文件所在位置
@@ -78,6 +102,77 @@ public:
 	static QString getVSSongFilePath(const QString& modAbsolutePath,const QString& songId)
 	{
 		return modAbsolutePath + QDir::separator() + "songs" + QDir::separator() + songId;
+	}
+
+private:
+	// 下面是我们模仿原版写的方法！用于HScript调用
+	static void setCurrentLevel(const QString& level)
+	{
+		currentLevel = level;
+	}
+
+	// 获得内置或者mod资源
+	static QString getPreloadPath(const QString& file)
+	{
+		// 'assets/$file'
+		return "assets/" + file;
+	}
+
+	// 获得内置或者mod资源
+	static QString getLibraryPathForce(const QString& file, const QString& library) {
+		// '$library:assets/$library/$file'
+		return library + ":assets/" + library + "/" + file;
+	}
+
+	static bool tryFileInPaths(const QStringList& paths, const QString& relativePath,
+						   const QString& type, QString& outPath);
+
+	static QStringList getExtensionsForType(const QString& type);
+
+	// 为了兼容HScript，我选择使用字符串传参而不是枚举
+
+	static QString resolveAssetPath(const QString& path, const QString& type);
+
+public:
+	/**
+	 * 辅助方法，外部应该调用这个来获取”绝对路径“
+	 * ！！注意！！！！ 不需要加文件拓展名！！加了反而出问题！！
+	 * @param file 文件名或相对路径
+	 * @param type 会根据他进行类型匹配
+	 * @param library :前面的库名，如shared，{modId}，不加自动查找所有位置
+	 * @return 构造好的绝对路径
+	 */
+	static QString file(const QString& file, const QString& type, const QString& library);
+
+	static QString image(const QString& key, const QString& library = "") { return file( "images/" + key, "IMAGE", library); }
+	static QString sound(const QString& key, const QString& library = "") { return file("sounds/" + key, "SOUND", library); }
+	static QString music(const QString& key, const QString& library = "") { return file("music/" + key, "MUSIC", library); }
+	static QString json(const QString& key, const QString& library = "") { return file(key, "TEXT", library) + ".json"; }
+	static QString font(const QString& key, const QString& library = "") { return file("fonts/" + key, "TEXT", library);}
+};
+
+// 辅助类：给QML调用用的，还必须遵守人家的单例模式
+class PathUtil : public QObject
+{
+	Q_OBJECT
+
+public:
+	static inline PathUtil* ins = nullptr;
+
+	static PathUtil* instance()
+	{
+		if (!ins) ins = new PathUtil();
+		return ins;
+	}
+
+	Q_INVOKABLE QString font(const QString& name)
+	{
+		return "file:///" + Path::font(name);
+	}
+
+	Q_INVOKABLE QString image(const QString& name)
+	{
+		return "file:///" + Path::image(name);
 	}
 };
 

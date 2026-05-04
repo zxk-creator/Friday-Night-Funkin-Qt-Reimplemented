@@ -18,7 +18,6 @@ qt_standard_project_setup()
 set(PROJECT_SOURCES
     main.cpp
     resources.rc
-        default_resources.qrc
         src/include/audio/FunkinSound.h
         src/include/audio/FunkinSoundSystem.h
         src/include/audio/SoundEnum.h
@@ -31,7 +30,7 @@ set(PROJECT_SOURCES
         src/src/audio/MiniaudioOggImpl.cpp
         src/src/utils/Path.cpp
         src/include/gameloop/GameLoop.h
-        src/include/modding/modmetadata/ModMetadata.h
+        src/include/data/mod/ModMetadata.h
         src/include/modding/ModListModel.h
         src/include/modding/scan/ModManager.h
         src/include/utils/modding/ModScanUtils.h
@@ -71,6 +70,9 @@ set(PROJECT_SOURCES
         src/src/data/character/CharacterData.cpp
         src/src/utils/file/FileUtil.cpp
         src/include/data/character/CharacterRegistry.h
+        src/include/data/notestyle/NoteStyleData.h
+        src/src/data/notestyle/NoteStyleData.cpp
+        src/include/data/mod/ModRegistry.h
 )
 
 set(CMAKE_AUTORCC ON)
@@ -84,23 +86,41 @@ endif()
 
 
 # ===================== 避免野指针的利器ASan ================================
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address -g -O0")
-set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=address")
+# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address -g -O0")
+# set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=address")
+# 用的时候去掉注释！
 # =============== 对所有的都生效，记得Release版本删掉他们！ =====================
 
 
 
 qt_add_executable(${PROJECT_NAME} ${PROJECT_SOURCES})
 
-# 为了我们的权限
+
+# 不再使用qrc系统，而是直接携带assets文件进行读取
+if (NOT ANDROID)
+    message(STATUS "资产源目录: ${CMAKE_CURRENT_SOURCE_DIR}/assets")
+    message(STATUS "目标路径: $<TARGET_FILE_DIR:${PROJECT_NAME}>/assets")
+
+    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_directory
+            "${CMAKE_CURRENT_SOURCE_DIR}/assets"
+            "$<TARGET_FILE_DIR:${PROJECT_NAME}>/assets"
+            COMMENT "（只有不是android才生效）正在把assets目录拷贝到构建目录..."
+    )
+endif ()
+
+# 为了我们的权限和assets
 if (ANDROID)
+    add_custom_command(TARGET ${PROJECT_NAME} PRE_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_directory
+            "${CMAKE_CURRENT_SOURCE_DIR}/assets"
+            "${CMAKE_CURRENT_SOURCE_DIR}/android/assets"
+            COMMENT "正在把项目下的assets目录同步到android/assets用于apk打包...")
+
     set_target_properties(${PROJECT_NAME} PROPERTIES
         QT_ANDROID_PACKAGE_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/android"
     )
     target_link_libraries(${PROJECT_NAME} PRIVATE Qt6::Core)
-    # 清除符号表，减小apk体积
-    set(CMAKE_STRIP ON)
-    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -s")
 endif ()
 
 # CMake里面一定要加上qml文件，否则无法生效！

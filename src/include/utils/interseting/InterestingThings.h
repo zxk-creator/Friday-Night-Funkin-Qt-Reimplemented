@@ -143,8 +143,9 @@ class InterestingThings
     }
 
 public:
-    static void damn()
+    static void damn(bool shouldShow)
     {
+        if (!shouldShow) return;
         fuckyou();
 
         printBuddha();

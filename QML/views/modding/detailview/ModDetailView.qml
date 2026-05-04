@@ -16,7 +16,7 @@ Item {
     Image{
         id: backgroundImage
         anchors.fill: parent
-        source: "qrc:/mods/default/images/menuBG.png"
+        source: PathUtil.image("menuBG")
         fillMode: Image.PreserveAspectCrop
         z: -10
     }

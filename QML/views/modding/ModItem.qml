@@ -42,7 +42,7 @@ Rectangle {
         Image {
             // linux和windows不一样这个file
             function getfileUrl(absolutePath){
-                if (!absolutePath) return "qrc:/mods/default/images/icons/unknownMod.png";
+                if (!absolutePath) return "qrc:/assets/default/images/icons/unknownMod.png";
                 if (Qt.platform.os === "windows"){
                     return "file:///" + absolutePath
                 }

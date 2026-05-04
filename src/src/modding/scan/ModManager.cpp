@@ -28,8 +28,8 @@ void ModManager::scanModMetadatas()
     {
         switch(ModScanUtils::judgeModEngine(modPath))
         {
-        case ModEngineType::PE: modMetadata = ModScanUtils::scanPEModMetadata(modPath); break;
-        case ModEngineType::VS: modMetadata = ModScanUtils::scanVSModMetadata(modPath); break;
+        case ModEngineType::PE: ModScanUtils::scanPEModMetadata(modPath); break;
+        case ModEngineType::VS: ModScanUtils::scanVSModMetadata(modPath); break;
         default: break;
         }
         if (modMetadata.has_value()) m_model->addMod(modMetadata.value());

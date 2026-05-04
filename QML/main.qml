@@ -14,6 +14,11 @@ ApplicationWindow {
     minimumWidth: 800
     minimumHeight: 450
 
+    // 在这里写每帧渲染以及动画逻辑（自动垂直同步）！
+    FrameAnimation{
+
+    }
+
     background: Rectangle { color: "black" }
     // 固定比例容器，模拟原版肥牛饭缩放操作
     Item {

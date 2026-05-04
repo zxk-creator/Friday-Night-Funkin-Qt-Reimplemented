@@ -2,7 +2,7 @@
 // Created by kkplay on 4/17/26.
 //
 
-#include "modding/modmetadata/ModMetadata.h"
+#include "../../../include/data/mod/ModMetadata.h"
 #include "utils/lang/LangStringPool.h"
 
 ModMetadata::ModMetadata()

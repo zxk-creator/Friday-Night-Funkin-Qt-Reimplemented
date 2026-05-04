@@ -73,6 +73,6 @@ public:
     // 不应该调用这个
     QString oneToString(const QString& id) const override
     {
-        return "";
+        return toString();
     }
 };

@@ -93,25 +93,35 @@ void CharacterData::from_json(const json& j) {
     }
 }
 
-std::unique_ptr<CharacterData>  parseCharacterData(const json& j, const QString& filepath) {
+std::unique_ptr<CharacterData> parseCharacterData(const json& j, const QString& filepath)
+{
     try {
         auto data = std::make_unique<CharacterData>();
         data->from_json(j);
 
         // 验证必填字段
         if (data->assetPath.isEmpty()) {
-            MessageHandler::logWarning(filepath + "的assetPath字段为空！已跳过");
+            MessageHandler::logWarning(
+                filepath + "的assetPath字段为空！已跳过",
+                "CharacterParser"
+            );
             return nullptr;
         }
 
         if (data->animations.isEmpty()) {
-            MessageHandler::logWarning(filepath + "的animations字段为空！已跳过");
+            MessageHandler::logWarning(
+                filepath + "的animations字段为空！已跳过",
+                "CharacterParser"
+            );
             return nullptr;
         }
 
         return data;
     } catch (const std::exception& e) {
-        MessageHandler::logError("解析模组" + filepath + "失败，原因: \n" + e.what() + "\n");
+        MessageHandler::logError(
+            "解析模组" + filepath + "失败，原因: \n" + e.what() + "\n",
+            "CharacterParser"
+        );
         return nullptr;
     }
 }

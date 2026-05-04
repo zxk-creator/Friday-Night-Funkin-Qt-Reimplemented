@@ -3,7 +3,7 @@
 //
 
 #pragma once
-#include "modmetadata/ModMetadata.h"
+#include "../data/mod/ModMetadata.h"
 #include <QAbstractListModel>
 // 类似Haxe的Any类型
 #include <QVariant>

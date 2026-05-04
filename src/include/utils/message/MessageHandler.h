@@ -46,35 +46,37 @@ class MessageHandler : QObject
 
 public:
     /**
-     * 任何一个方法都不用加上"提示"等前缀，我这里已经加好了。
+     * 任何一个方法都不用加上"提示""[Where]"等前缀，我这里已经加好了。
+     * @param msg 要加的消息
+     * @param fromWhere 比如前缀"[Path]提示"中的Path
      */
-    static void logInfo(QString msg)
+    static void logInfo(const QString& msg,const QString& fromWhere)
     {
-        QString i = "提示: " + msg;
+        QString i = "[" + fromWhere + "] " + "提示: " + msg;
         addMessage(ErrType::Info,i);
-        qInfo() << msg;
+        qInfo() << i;
     }
 
-    static void logWarning(QString msg)
+    static void logWarning(const QString& msg, const QString& fromWhere)
     {
-        QString w = "警告: " + msg;
-        addMessage(ErrType::Warning,w);
-        qWarning() << msg;
+        QString w = "[" + fromWhere + "] " + "警告: " + msg;
+        addMessage(ErrType::Warning, w);
+        qWarning() << w;
     }
 
-    static void logWarning(std::string msg)
+    static void logWarning(const std::string& msg, const QString& fromWhere)
     {
-        std::string e = "错误: " + msg;
-        QString res = QString::fromStdString(e);
-        addMessage(ErrType::Warning,res);
-        qWarning() << res;
+        std::string w = "[" + fromWhere.toStdString() + "] " + "警告: " + msg;
+        QString res = QString::fromStdString(w);
+        addMessage(ErrType::Warning, res);
+        qWarning() << QString::fromStdString(w);
     }
 
-    static void logError(QString msg)
+    static void logError(const QString& msg, const QString& fromWhere)
     {
-        QString e = "错误: " + msg;
-        addMessage(ErrType::Error,e);
-        qCritical() << msg;
+        QString e = "[" + fromWhere + "] " + "错误: " + msg;
+        addMessage(ErrType::Error, e);
+        qCritical() << e;
     }
 
     // TODO:目前还没想好怎么把他显示上去，因此先保留空实现。

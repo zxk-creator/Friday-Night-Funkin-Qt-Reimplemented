@@ -1,5 +1,6 @@
 // Mainfont.qml
 import QtQuick
+import fnf
 
 Item {
     id: root
@@ -18,7 +19,7 @@ Item {
 
     FontLoader {
         id: customFont
-        source: "qrc:/mods/default/fonts/GenshinFont.ttf"
+        source: PathUtil.font("GenshinFont")
     }
 
     Text {

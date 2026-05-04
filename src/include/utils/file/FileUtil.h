@@ -85,8 +85,9 @@ namespace FileUtil
      * @param path 路径
      * @return 路径的叶子节点名称
      * eg: /home/kkplay/MyCode/cplusplus -> cplusplus
+     *     /home/kkplay/MyCode.txt       -> MyCode.txt
      */
-    QString getPathLeaf(const QString& path);
+    std::optional<QString> getPathLeaf(const QString& path);
 
     /**
      * 获得歌曲的绝对路径（通过字符串拼接）
