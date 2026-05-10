@@ -33,6 +33,8 @@ public:
     static void logVersionInvalid(const QString& versionProvided, const QString& versionNeeded, const QString& fileName);
     // 为了防止我写错逻错故意设置的自杀行为
     static void wrongParamException(const QString& msg,const QString& functionName, const int atLine);
+    // 某些其他问题，必须关闭游戏
+    static void killGame(const QString& why,const QString& fromWhere);
 };
 
 // 自动获取函数名和行号，使用的时候直接LOG_JSON_PARSE_ERROR(msg,filename)这两个msg和filename替换一下即可

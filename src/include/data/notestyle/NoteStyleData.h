@@ -4,9 +4,8 @@
 
 #pragma once
 
-#include <QVector>
-#include <QHash>
 #include <optional>
+#include <memory>
 #include "data/animation/AnimationData.h"
 #include "nlohmann/json.hpp"
 
@@ -19,92 +18,19 @@ enum class NoteDirection {
     Right
 };
 
-
-struct NoteStyleData_Note {
-    UnnamedAnimationData left;
-    UnnamedAnimationData down;
-    UnnamedAnimationData up;
-    UnnamedAnimationData right;
-
-    void from_json(const json& j);
-};
-
-struct NoteStyleData_Countdown {
-    QString audioPath;
-
-    void from_json(const json& j);
-};
-
-
-struct NoteStyleData_NoteStrumline {
-    UnnamedAnimationData leftStatic;
-    UnnamedAnimationData leftPress;
-    UnnamedAnimationData leftConfirm;
-    UnnamedAnimationData leftConfirmHold;
-    UnnamedAnimationData downStatic;
-    UnnamedAnimationData downPress;
-    UnnamedAnimationData downConfirm;
-    UnnamedAnimationData downConfirmHold;
-    UnnamedAnimationData upStatic;
-    UnnamedAnimationData upPress;
-    UnnamedAnimationData upConfirm;
-    UnnamedAnimationData upConfirmHold;
-    UnnamedAnimationData rightStatic;
-    UnnamedAnimationData rightPress;
-    UnnamedAnimationData rightConfirm;
-    UnnamedAnimationData rightConfirmHold;
-
-    void from_json(const json& j);
-};
-
-struct NoteStyleData_NoteSplash {
-    std::optional<bool> enabled = true;
-    std::optional<int> framerateDefault = 24;
-    std::optional<int> framerateVariance = 2;
-    std::optional<QString> blendMode = "normal";
-    std::optional<QVector<UnnamedAnimationData>> leftSplashes;
-    std::optional<QVector<UnnamedAnimationData>> downSplashes;
-    std::optional<QVector<UnnamedAnimationData>> upSplashes;
-    std::optional<QVector<UnnamedAnimationData>> rightSplashes;
-
-    void from_json(const json& j);
-};
-
-struct NoteStyleData_HoldNoteCoverDirectionData {
-    std::optional<QString> assetPath;
-    std::optional<UnnamedAnimationData> start;
-    std::optional<UnnamedAnimationData> hold;
-    std::optional<UnnamedAnimationData> end;
-
-    void from_json(const json& j);
-};
-
-
-struct NoteStyleData_HoldNoteCover {
-    std::optional<bool> enabled = true;
-    std::optional<NoteStyleData_HoldNoteCoverDirectionData> left;
-    std::optional<NoteStyleData_HoldNoteCoverDirectionData> down;
-    std::optional<NoteStyleData_HoldNoteCoverDirectionData> up;
-    std::optional<NoteStyleData_HoldNoteCoverDirectionData> right;
-
-    void from_json(const json& j);
-};
-
-
-struct NoteStyleData_ComboNum {
-    // 目前没有字段，预留
-    void from_json(const json& j);
-};
-
-
-struct NoteStyleData_Judgement {
-    // 目前没有字段，预留
-    void from_json(const json& j);
-};
-
+// 前向声明
+struct NoteStyleData_Note;
+struct NoteStyleData_Countdown;
+struct NoteStyleData_NoteStrumline;
+struct NoteStyleData_NoteSplash;
+struct NoteStyleData_HoldNoteCoverDirectionData;
+struct NoteStyleData_HoldNoteCover;
+struct NoteStyleData_ComboNum;
+struct NoteStyleData_Judgement;
+struct NoteStyleData_HoldNote;
 
 template<typename T>
-struct NoteStyleAssetData {
+struct NoteStyleAssetData : ISerializable {
     QString assetPath;
     float scale = 1.0f;
     QVector<float> offsets = {0, 0};
@@ -130,17 +56,135 @@ struct NoteStyleAssetData {
             data->from_json(j["data"]);
         }
     }
+
+    QString toString() const override;
+    QString oneToString(const QString& id) const override {
+        return toString();
+    }
 };
 
-// 这个haxe源码并没有定义，所以我也不定义了
-struct NoteStyleData_HoldNote {
+struct NoteStyleData_Note : ISerializable {
+    UnnamedAnimationData left;
+    UnnamedAnimationData down;
+    UnnamedAnimationData up;
+    UnnamedAnimationData right;
+
+    void from_json(const json& j);
+    QString toString() const override;
+    QString oneToString(const QString& id) const override {
+        return toString();
+    }
 };
 
+struct NoteStyleData_Countdown : ISerializable {
+    QString audioPath;
 
-/**
- * 通用的资源描述结构，用于描述音符样式系统中任何资源的通用属性。
- */
-struct NoteStyleAssetsData {
+    void from_json(const json& j);
+    QString toString() const override;
+    QString oneToString(const QString& id) const override {
+        return toString();
+    }
+};
+
+struct NoteStyleData_NoteStrumline : ISerializable {
+    UnnamedAnimationData leftStatic;
+    UnnamedAnimationData leftPress;
+    UnnamedAnimationData leftConfirm;
+    UnnamedAnimationData leftConfirmHold;
+    UnnamedAnimationData downStatic;
+    UnnamedAnimationData downPress;
+    UnnamedAnimationData downConfirm;
+    UnnamedAnimationData downConfirmHold;
+    UnnamedAnimationData upStatic;
+    UnnamedAnimationData upPress;
+    UnnamedAnimationData upConfirm;
+    UnnamedAnimationData upConfirmHold;
+    UnnamedAnimationData rightStatic;
+    UnnamedAnimationData rightPress;
+    UnnamedAnimationData rightConfirm;
+    UnnamedAnimationData rightConfirmHold;
+
+    void from_json(const json& j);
+    QString toString() const override;
+    QString oneToString(const QString& id) const override {
+        return toString();
+    }
+};
+
+struct NoteStyleData_NoteSplash : ISerializable {
+    std::optional<bool> enabled = true;
+    std::optional<int> framerateDefault = 24;
+    std::optional<int> framerateVariance = 2;
+    std::optional<QString> blendMode = "normal";
+    std::optional<QVector<UnnamedAnimationData>> leftSplashes;
+    std::optional<QVector<UnnamedAnimationData>> downSplashes;
+    std::optional<QVector<UnnamedAnimationData>> upSplashes;
+    std::optional<QVector<UnnamedAnimationData>> rightSplashes;
+
+    void from_json(const json& j);
+    QString toString() const override;
+    QString oneToString(const QString& id) const override {
+        return toString();
+    }
+};
+
+struct NoteStyleData_HoldNoteCoverDirectionData : ISerializable {
+    std::optional<QString> assetPath;
+    std::optional<UnnamedAnimationData> start;
+    std::optional<UnnamedAnimationData> hold;
+    std::optional<UnnamedAnimationData> end;
+
+    void from_json(const json& j);
+    QString toString() const override;
+    QString oneToString(const QString& id) const override {
+        return toString();
+    }
+};
+
+struct NoteStyleData_HoldNoteCover : ISerializable {
+    std::optional<bool> enabled = true;
+    std::optional<NoteStyleData_HoldNoteCoverDirectionData> left;
+    std::optional<NoteStyleData_HoldNoteCoverDirectionData> down;
+    std::optional<NoteStyleData_HoldNoteCoverDirectionData> up;
+    std::optional<NoteStyleData_HoldNoteCoverDirectionData> right;
+
+    void from_json(const json& j);
+    QString toString() const override;
+    QString oneToString(const QString& id) const override {
+        return toString();
+    }
+};
+
+struct NoteStyleData_ComboNum : ISerializable {
+    // 目前没有字段，预留
+    void from_json(const json& j);
+    QString toString() const override;
+    QString oneToString(const QString& id) const override {
+        return toString();
+    }
+};
+
+struct NoteStyleData_Judgement : ISerializable {
+    // 目前没有字段，预留
+    void from_json(const json& j);
+    QString toString() const override;
+    QString oneToString(const QString& id) const override {
+        return toString();
+    }
+};
+
+struct NoteStyleData_HoldNote : ISerializable {
+    // 这个haxe源码并没有定义，所以我也不定义了
+    void from_json(const json& j) {}
+    QString toString() const override {
+        return "长按音符数据: 空(未定义)";
+    }
+    QString oneToString(const QString& id) const override {
+        return toString();
+    }
+};
+
+struct NoteStyleAssetsData : ISerializable {
     std::optional<NoteStyleAssetData<NoteStyleData_Note>> note;
     std::optional<NoteStyleAssetData<NoteStyleData_HoldNote>> holdNote;
     std::optional<NoteStyleAssetData<NoteStyleData_NoteStrumline>> noteStrumline;
@@ -166,10 +210,13 @@ struct NoteStyleAssetsData {
     std::optional<NoteStyleAssetData<NoteStyleData_ComboNum>> comboNumber9;
 
     void from_json(const json& j);
+    QString toString() const override;
+    QString oneToString(const QString& id) const override {
+        return toString();
+    }
 };
-// haxe写起来是爽了，可是用C++的难受了
 
-struct NoteStyleData {
+struct NoteStyleData : ISerializable {
     QString version = "1.1.0";
     QString name;
     QString author;
@@ -177,6 +224,12 @@ struct NoteStyleData {
     NoteStyleAssetsData assets;
 
     void from_json(const json& j);
+    QString toString() const override;
+    QString oneToString(const QString& id) const override {
+        return toString();
+    }
 };
 
-std::optional<NoteStyleData> parseNoteStyleData(const json& j, const QString& filepath = "");
+namespace NoteStyleParser{
+    std::unique_ptr<NoteStyleData> parseNoteStyleData(const json& j, const QString& filepath = "");
+}

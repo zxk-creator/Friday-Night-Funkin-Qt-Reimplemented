@@ -5,48 +5,95 @@
 #pragma once
 
 #include "nlohmann/json.hpp"
-#include "play/ISerializable.h"
+#include "data/animation/AnimationData.h"
 
 using json = nlohmann::json;
 
-struct TextureAtlasData : ISerializable {
-    bool swfMode = false;
-    bool cacheOnLoad = false;
-    int filterQuality = 1;      // 0=HIGH,1=MEDIUM,2=LOW,3=RUDY
-    bool applyStageMatrix = false;
-    bool useRenderTexture = false;
+// 什么意思？这代表一个数组，单独的一个float代表宽度和高度缩放1.5倍，数组则是第一个宽度缩放多少倍，第二个高度缩放多少倍。
+using EitherFloatOrFloats = std::variant<float, QVector<float>>;
 
-    void from_json(const json& j) {
-        if (j.contains("swfMode")) swfMode = j["swfMode"].get<bool>();
-        if (j.contains("cacheOnLoad")) cacheOnLoad = j["cacheOnLoad"].get<bool>();
-        if (j.contains("filterQuality")) filterQuality = j["filterQuality"].get<int>();
-        if (j.contains("applyStageMatrix")) applyStageMatrix = j["applyStageMatrix"].get<bool>();
-        if (j.contains("useRenderTexture")) useRenderTexture = j["useRenderTexture"].get<bool>();
-    }
+struct StageDataCharacter : ISerializable {
+    int zIndex = 0;
+    QVector<float> position = {0, 0};
+    float scale = 1.0f;
+    QVector<float> cameraOffsets;           // 可选
+    QVector<float> scroll = {1, 1};
+    float alpha = 1.0f;
+    float angle = 0.0f;
 
-    QString toString() const override
-    {
-        QString res;
-        res += "SWF模式: " + QString(swfMode ? "是" : "否") + "\n";
-        res += "加载时缓存: " + QString(cacheOnLoad ? "是" : "否") + "\n";
-
-        QString qualityStr;
-        switch (filterQuality) {
-        case 0: qualityStr = "高"; break;
-        case 1: qualityStr = "中"; break;
-        case 2: qualityStr = "低"; break;
-        case 3: qualityStr = "极低"; break;
-        default: qualityStr = "未知"; break;
-        }
-        res += "过滤质量: " + qualityStr + " (" + QString::number(filterQuality) + ")\n";
-        res += "应用舞台矩阵: " + QString(applyStageMatrix ? "是" : "否") + "\n";
-        res += "使用渲染纹理: " + QString(useRenderTexture ? "是" : "否") + "\n";
-
-        return res;
-    }
-
+    void from_json(const json& j);
+    QString toString() const override;
     QString oneToString(const QString& id) const override
     {
         return toString();
     }
 };
+
+struct StageDataProp : ISerializable {
+    std::optional<QString> name;
+    QString assetPath;
+    QVector<float> position;
+    int zIndex = 0;
+    bool isPixel = false;
+    bool flipX = false;
+    bool flipY = false;
+    EitherFloatOrFloats scale = 1.0f;
+    float alpha = 1.0f;
+    float danceEvery = 0.0f;
+    QVector<float> scroll = {1, 1};
+    QVector<AnimationData> animations;
+    std::optional<QString> startingAnimation;
+    QString animType = "sparrow";
+    float angle = 0.0f;
+    QString blend = "";
+    QString color = "#FFFFFF";
+    std::optional<TextureAtlasData> atlasSettings;
+
+    void from_json(const json& j);
+
+    QString toString() const override;
+    QString oneToString(const QString& id) const override
+    {
+        return toString();
+    }
+};
+
+struct StageDataCharacters : ISerializable{
+    StageDataCharacter bf;
+    StageDataCharacter dad;
+    StageDataCharacter gf;
+
+    void from_json(const json& j);
+
+    QString toString() const override;
+    QString oneToString(const QString& id) const override
+    {
+        toString();
+    }
+};
+
+
+struct StageData : ISerializable{
+    QString version;
+    QString name = "Unknown";
+    QVector<StageDataProp> props;
+    StageDataCharacters characters;
+    std::optional<float> cameraZoom = 1.0f;
+    std::optional<QString> directory = "shared";
+
+    void from_json(const json& j);
+
+    QString toString() const override;
+    QString oneToString(const QString& id) const override
+    {
+        return toString();
+    }
+};
+
+/**
+ * 目前没看到版本迁移相关逻辑，因此我也不写了。最新版：1.0.2和1.0.0兼容。
+ */
+namespace StageDataParser
+{
+    std::unique_ptr<StageData> parseStageData(const json& j, const QString& filepath = "");
+}

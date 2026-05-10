@@ -17,11 +17,11 @@ FunkinPath Path::getDefaultSoundPath(EDefaultSoundType soundType) {
     if (!isInitialized)
     {
         isInitialized = true;
-        confirmSoundPath = sound("confirmMenu");
-        scrollSoundPath = sound("scrollMenu");
-        cancelSoundPath = sound("cancelMenu");
-        infoSoundPath = sound("boop");
-        titleThemePath = file("preload/music/freakyMenu/freakyMenu","MUSIC","");
+        confirmSoundPath = sound("confirmMenu",ModEngineType::VS);
+        scrollSoundPath = sound("scrollMenu",ModEngineType::VS);
+        cancelSoundPath = sound("cancelMenu",ModEngineType::VS);
+        infoSoundPath = sound("boop",ModEngineType::VS);
+        titleThemePath = file("preload/music/freakyMenu/freakyMenu","MUSIC","",ModEngineType::VS);
     }
 
     switch (soundType)
@@ -271,6 +271,61 @@ QString Path::getVSDataPath(EDataResourceType type, const QString& modAbsolutePa
     return QDir::cleanPath(modAbsolutePath + QDir::separator() + "data" + QDir::separator() + targetDirName);
 }
 
+QVector<QString> Path::getPEDataPath(EDataResourceType type, const QString& modAbsolutePath)
+{
+    QString sharedDir = "/shared";
+    QString targetDirName;
+    switch (type)
+    {
+    case EDataResourceType::character:
+        {
+            targetDirName = "/characters";
+            break;
+        }
+    case EDataResourceType::dialogue:
+        {
+            // TODO: 暂时搁置，不支持自定义对话框（目前甚至不会弹出）
+            targetDirName = "/dialogue";
+            break;
+        }
+    case EDataResourceType::levels:
+        {
+            targetDirName = "/weeks";
+            break;
+        }
+    case EDataResourceType::notestyles:
+        {
+            targetDirName = "/images/noteSkins";
+            break;
+        }
+    case EDataResourceType::songs:
+        {
+            targetDirName = "/songs";
+            break;
+        }
+    case EDataResourceType::stages:
+        {
+            targetDirName = "/stages";
+            break;
+        }
+    case EDataResourceType::notesplashes:
+        {
+            targetDirName = "/images/noteSplashes";
+            break;
+        }
+    default:
+        {
+            LOG_WRONG_PARAM_ERROR("你写错了参数！");
+            break;
+        }
+    }
+
+    QString sharedRes = QDir::cleanPath(modAbsolutePath + sharedDir + targetDirName);
+    QString normalRes = QDir::cleanPath(modAbsolutePath + targetDirName);
+
+    return {sharedRes,normalRes};
+}
+
 QStringList Path::getExtensionsForType(const QString& type) {
     if (type == "IMAGE") return {".png", ".jpg", ".jpeg"};
     if (type == "SOUND" || type == "MUSIC") return {".ogg", ".mp3", ".wav"};
@@ -344,73 +399,94 @@ QString Path::resolveAssetPath(const QString& path, const QString& type) {
     return "";
 }
 
-QString Path::file(const QString& file, const QString& type, const QString& library) {
-    // 1. 解析库前缀，确定要查找的根路径
-    QString searchPath;
-    QString actualLibrary = library;
+QString Path::file(const QString& file, const QString& type, const QString& library, ModEngineType modType) {
 
-    // 如果file本身包含库前缀，优先使用
-    int colonPos = file.indexOf(':');
-    if (colonPos != -1 && library.isEmpty()) {
-        actualLibrary = file.left(colonPos);
-        searchPath = file.mid(colonPos + 1);
-        if (searchPath.startsWith("assets/")) {
-            searchPath = searchPath.mid(7);
-        }
-    } else {
-        searchPath = file;
-    }
 
-    // 2. 根据库名构建查找路径
-    QStringList searchPaths;
+    switch (modType)
+    {
+    case ModEngineType::VS:
+        {
+         // 1. 解析库前缀，确定要查找的根路径
+        QString searchPath;
+        QString actualLibrary = library;
 
-    if (!actualLibrary.isEmpty()) {
-        // 指定了库名
-        if (actualLibrary == "preload" || actualLibrary == "default") {
-            // preload/default → 主 assets 目录
-            searchPaths << getAssetRoot();
+        // 如果file本身包含库前缀，优先使用
+        int colonPos = file.indexOf(':');
+        if (colonPos != -1 && library.isEmpty()) {
+            actualLibrary = file.left(colonPos);
+            searchPath = file.mid(colonPos + 1);
+            if (searchPath.startsWith("assets/")) {
+                searchPath = searchPath.mid(7);
+            }
+        } else {
+            searchPath = file;
         }
-        else if (actualLibrary == "shared") {
-            // shared → assets/shared/
-            searchPaths << getAssetRoot() + "/shared";
-        }
-        else if (actualLibrary == "songs") {
-            // songs → assets/songs/
-            searchPaths << getAssetRoot() + "/songs";
-        }
-        else {
-            // 模组库 → mods/{modId}/assets/
-            searchPaths << getModDir() + QDir::separator() + actualLibrary + QDir::separator() +"assets";
-        }
-    }
-    else {
-        // 无库名自动查找
-        // 1) 模组目录
-        QString modDir = getModDir();
-        QDir modsDir(modDir);
-        if (modsDir.exists()) {
-            for (const QString& modId : modsDir.entryList(QDir::Dirs | QDir::NoDotAndDotDot)) {
-                searchPaths << modDir + QDir::separator() + modId + QDir::separator() + "assets";
+
+        // 2. 根据库名构建查找路径
+        QStringList searchPaths;
+
+        if (!actualLibrary.isEmpty()) {
+            // 指定了库名
+            if (actualLibrary == "preload" || actualLibrary == "default") {
+                // preload/default → 主 assets 目录
+                searchPaths << getAssetRoot();
+            }
+            else if (actualLibrary == "shared") {
+                // shared → assets/shared/
+                searchPaths << getAssetRoot() + "/shared";
+            }
+            else if (actualLibrary == "songs") {
+                // songs → assets/songs/
+                searchPaths << getAssetRoot() + "/songs";
+            }
+            else {
+                // 模组库 → mods/{modId}/assets/
+                searchPaths << getModDir() + QDir::separator() + actualLibrary + QDir::separator() +"assets";
             }
         }
+        else {
+            // 无库名自动查找
+            // 1) 模组目录
+            QString modDir = getModDir();
+            QDir modsDir(modDir);
+            if (modsDir.exists()) {
+                for (const QString& modId : modsDir.entryList(QDir::Dirs | QDir::NoDotAndDotDot)) {
+                    searchPaths << modDir + QDir::separator() + modId + QDir::separator() + "assets";
+                }
+            }
 
-        // 2) 当前关卡目录
-        if (!currentLevel.isEmpty()) {
-            searchPaths << getAssetRoot() + QDir::separator() + currentLevel;
+            // 2) 当前关卡目录
+            if (!currentLevel.isEmpty()) {
+                searchPaths << getAssetRoot() + QDir::separator() + currentLevel;
+            }
+
+            // 3) shared目录
+            searchPaths << getAssetRoot() + QDir::separator() + "shared";
+
+            // 4) assets目录
+            searchPaths << getAssetRoot();
         }
 
-        // 3) shared目录
-        searchPaths << getAssetRoot() + QDir::separator() + "shared";
+        // 3. 尝试查找文件
+        QString outPath;
+        if (tryFileInPaths(searchPaths, searchPath, type, outPath)) {
+            return outPath;
+        }
+            break;
+        }
 
-        // 4) assets目录
-        searchPaths << getAssetRoot();
+    case ModEngineType::PE:
+        {
+            // PE不支持这种:库前缀方式，因此不用管了
+
+            break;
+        }
+        default:
+        {
+            break;
+        }
     }
 
-    // 3. 尝试查找文件
-    QString outPath;
-    if (tryFileInPaths(searchPaths, searchPath, type, outPath)) {
-        return outPath;
-    }
 
     // 4. 未找到
     QString extensions = getExtensionsForType(type).join(", ");

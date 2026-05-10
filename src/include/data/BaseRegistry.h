@@ -32,40 +32,36 @@ public:
     // 这个注册表的名字
     QString registryName;
 
+protected:
     /**
      * {id, 实现了接口的内容}
      * 可以保证这些内容都是检查过的，可以直接使用，一定有效，不为空，顶多逻辑错误
     */
     unordered_map<QString,unique_ptr<ISerializable>> entries{};
+public:
 
-    /**
-     * 不初始化，直接野指针，出现各种难以调试的问题
-    */
-    static inline T* ins = nullptr;
+    static inline int entryCount = 0;
 
-    static T* instance()
-    {
-        if (!ins) ins = new T();
-        return ins;
-    }
-
-    BaseRegistry(const QString& regName)
-    {
+    BaseRegistry(const QString& regName){
         registryName = regName;
     }
 
     virtual void addEntry(const QString& id, unique_ptr<ISerializable> entry)
     {
         entries.insert({id,std::move(entry)});
+        entryCount++;
+    }
+
+    virtual void clearAllEntries(){
+        entries.clear();
+        entryCount = 0;
     }
 
     // TODO: 这个还支持脚本化的entry，我这边由于没有解释器所以暂不支持。
 
     // 用于模组详情界面的“统计信息”，调用这个即可获得条目
-    QString toString() const override
-    {
+    QString toString() const override{
         return registryName + "所持有的项数量: " + QString::number(entries.size());
-
     }
 
     QString oneToString(const QString& id) const override

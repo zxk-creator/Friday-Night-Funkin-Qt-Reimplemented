@@ -7,6 +7,7 @@
 #include "audio/FunkinSound.h"
 
 FunkinSoundSystem::FunkinSoundSystem(QObject *parent) : QObject(parent) {
+
     // 一定要先把SaveSystem new出来，再调用这个！！！！！否则崩溃
     uiSoundVolume = GlobalSystemUtils::getSoundVolume(ESoundType::uiSound);
     vocalSoundVolume = GlobalSystemUtils::getSoundVolume(ESoundType::vocal);

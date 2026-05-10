@@ -9,12 +9,6 @@
 #include "play/ISerializable.h"
 
 /**
- *  艹了，C++没有反射，一切都得自己从零开始手写！！！！！！！
- *  艹
- *  2026,5,1
- */
-
-/**
  * StoryMenu跳舞的那个角色
  */
 struct LevelPropData {
@@ -38,6 +32,7 @@ struct LevelPropData {
 struct LevelData : ISerializable {
     QString version = "1.0.1";
     QString name;
+    // 标题艺术字图片路径
     QString titleAsset;
     std::vector<LevelPropData> props;
     // 也许这是隐藏曲？
@@ -72,8 +67,8 @@ struct LevelData : ISerializable {
  */
 class LevelDataParser {
 public:
-    static std::optional<LevelData> parseLevelData_VS(const json& j, const QString& filename);
+    static std::unique_ptr<LevelData> parseLevelData_VS(const json& j, const QString& filename);
 
     //（暂未适配）
-    static void parseLevelData_PE(const json& j, LevelData& data);
+    static std::unique_ptr<LevelData> parseLevelData_PE(const json& j, const QString& filename);
 };

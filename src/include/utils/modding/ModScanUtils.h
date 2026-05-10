@@ -5,6 +5,8 @@
 #pragma once
 #include "data/mod/ModMetadata.h"
 
+class ModRegistry;
+
 using std::nullopt;
 
 class ModScanUtils
@@ -16,15 +18,15 @@ public:
      * 注意，这是扫描单个模组的元数据文件，真的启动扫描的方法在ModManager里面，调用后，会自动将元数据注册到注册表中。
      * @param modAbsolutePath 模组内容所在的根目录
      */
-    static void scanPEModMetadata(QString& modAbsolutePath);
+    static void scanPEModMetadata(const QString& modAbsolutePath,ModRegistry* registryRef);
     /**
      * 参数和作用同上。
      */
-    static void scanVSModMetadata(QString& modAbsolutePath);
+    static void scanVSModMetadata(const QString& modAbsolutePath,ModRegistry* registryRef);
 
     /** TODO:先扔这儿了 **/
-    static optional<ModMetadata> scanKEModMetadata(QString& modAbsolutePath) { return nullopt;}
-    static optional<ModMetadata> scanCNEModMetadata(QString& modAbsolutePath) { return nullopt;}
+    static void scanKEModMetadata(const QString& modAbsolutePath) {}
+    static void scanCNEModMetadata(const QString& modAbsolutePath) {}
 
     /**
      *  真正扫描一个模组文件夹里面的东西！您只需要调用这个即可

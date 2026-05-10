@@ -4,7 +4,6 @@
 
 #pragma once
 
-#include "LevelData.h"
 #include "data/BaseRegistry.h"
 
 class LevelRegistry : public BaseRegistry<LevelRegistry>

@@ -20,12 +20,6 @@ public:
         saveInstance = new Save();
     }
 
-    static SaveSystem* instance()
-    {
-        if (!s_instance) s_instance = new SaveSystem();
-        return s_instance;
-    }
-
 protected:
     ~SaveSystem() = default;
 

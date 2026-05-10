@@ -16,7 +16,11 @@ Rectangle {
     property color pressColor: "#B0FFFFDD"    // 默认点击白
     property color selectedColor: "#55FFFFFF"
 
-    // 暴露注入的model变量，防止外部访问的时候说找不到属性
+    /**
+     * 暴露注入的model变量，防止外部访问的时候说找不到属性
+     * 这个model，是qml自动注入的变量名，无需更改
+     * 后面的title什么的，是我在ModListModel里面定义的枚举值。
+     */
     readonly property string mtitle: model.title
     readonly property string micon: model.icon
     readonly property string mdetail: model.detail
@@ -42,7 +46,7 @@ Rectangle {
         Image {
             // linux和windows不一样这个file
             function getfileUrl(absolutePath){
-                if (!absolutePath) return "qrc:/assets/default/images/icons/unknownMod.png";
+                if (!absolutePath) return PathUtil.image("icons/unknownMod");
                 if (Qt.platform.os === "windows"){
                     return "file:///" + absolutePath
                 }

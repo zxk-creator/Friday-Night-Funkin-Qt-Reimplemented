@@ -75,3 +75,9 @@ void Exception::wrongParamException(const QString& msg, const QString& functionN
     // 直接自杀
     std::terminate();
 }
+
+void Exception::killGame(const QString& why,const QString& fromWhere)
+{
+    MessageHandler::logError(why,fromWhere);
+    std::terminate();
+}

@@ -36,4 +36,7 @@ public:
     QString description() const { return tr("描述: <br/>"); }
     QString homepage() const { return tr("下载网站: <br/>"); }
     QString contributor() const { return tr("贡献者: <br/>"); }
+
+    // 解析模组相关
+    QString unknownWeekName() const { return "未命名周目"; }
 };

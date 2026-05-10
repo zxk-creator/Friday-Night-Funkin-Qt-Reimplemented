@@ -7,8 +7,7 @@
 #include <string>
 #include <vector>
 
-#include "data/stage/StageData.h"
-#include "nlohmann/json.hpp"
+#include "TextureAtlas.h"
 
 using json = nlohmann::json;
 
@@ -91,7 +90,7 @@ struct UnnamedAnimationData : ISerializable{
     }
 };
 
-struct AnimationData : UnnamedAnimationData, ISerializable{
+struct AnimationData : UnnamedAnimationData{
     std::string name;
 
     void from_json(const json& j) {

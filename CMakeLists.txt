@@ -29,15 +29,12 @@ set(PROJECT_SOURCES
         src/src/audio/FunkinSoundSystem.cpp
         src/src/audio/MiniaudioOggImpl.cpp
         src/src/utils/Path.cpp
-        src/include/gameloop/GameLoop.h
         src/include/data/mod/ModMetadata.h
         src/include/modding/ModListModel.h
-        src/include/modding/scan/ModManager.h
         src/include/utils/modding/ModScanUtils.h
         src/src/utils/modding/ModScanUtils.cpp
         src/include/utils/lang/LangStringPool.h
         src/src/utils/modding/GlobalSystemUtils.cpp
-        src/src/modding/scan/ModManager.cpp
         src/src/modding/modmetadata/ModMetadata.cpp
         src/include/permissions/GetAndroidStoragePermission.h
         src/include/data/BaseRegistry.h
@@ -63,7 +60,6 @@ set(PROJECT_SOURCES
         src/src/data/song/SongData.cpp
         src/include/utils/message/MessageHandler.h
         src/include/utils/interseting/InterestingThings.h
-        src/include/play/event/IHookEvents.h
         src/include/play/ISerializable.h
         src/include/utils/extension/ExtendJSONParse.h
         src/include/data/character/CharacterData.h
@@ -73,6 +69,15 @@ set(PROJECT_SOURCES
         src/include/data/notestyle/NoteStyleData.h
         src/src/data/notestyle/NoteStyleData.cpp
         src/include/data/mod/ModRegistry.h
+        src/src/data/mod/ModRegistry.cpp
+        src/src/modding/ModListModel.cpp
+        src/include/data/Context.h
+        src/include/play/game/GameLoop.h
+        src/include/play/game/FNFObject.h
+        src/include/data/animation/TextureAtlas.h
+        src/src/data/stage/StageData.cpp
+        src/include/data/stage/StageRegistry.h
+        src/include/data/notestyle/NoteStyleRegistry.h
 )
 
 set(CMAKE_AUTORCC ON)
@@ -91,10 +96,47 @@ endif()
 # 用的时候去掉注释！
 # =============== 对所有的都生效，记得Release版本删掉他们！ =====================
 
-
-
 qt_add_executable(${PROJECT_NAME} ${PROJECT_SOURCES})
 
+# 预编译头加快编译
+target_precompile_headers(${PROJECT_NAME} PRIVATE
+        <QString>
+        <QDir>
+        <QFile>
+        <QFileInfo>
+        <QDebug>
+        <QCoreApplication>
+        <QStandardPaths>
+        <QObject>
+        <QVector>
+        <QMap>
+        <QHash>
+        <QSet>
+        <QStringList>
+        <QVariant>
+        <QJsonDocument>
+        <QJsonObject>
+        <QJsonArray>
+
+        <QQmlApplicationEngine>
+        <QQmlContext>
+        <QQuickView>
+        <QApplication>
+        <QIcon>
+
+        <string>
+        <vector>
+        <map>
+        <memory>
+        <optional>
+        <algorithm>
+        <fstream>
+        <sstream>
+        <filesystem>
+
+        <nlohmann/json.hpp>
+        <miniaudio/miniaudio.h>
+)
 
 # 不再使用qrc系统，而是直接携带assets文件进行读取
 if (NOT ANDROID)

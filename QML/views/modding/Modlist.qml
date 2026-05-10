@@ -12,14 +12,13 @@ Item{
     anchors.fill: parent
 
     // 使用我们建立的观察者模式数量！
-    readonly property bool hasMod: ModManager.model.count > 0
+    readonly property bool hasMod: ModRegistry.modList.modCount > 0
     property real leftDownBtnWidth: gameCanvas.dp(650)
     // 用户选择的是谁？方便我们把数据传递给模组详情页面。
     property string selectedModAbsolutePath: ""
 
-    // 一进入这个页面就开始扫描模组！
     Component.onCompleted: {
-        console.log("页面已创建，获取已获得的模组！");
+
     }
 
     Image{
@@ -54,7 +53,7 @@ Item{
         z: 50
 
         onClicked: {
-            ModManager.scanModMetadatas();
+            ModRegistry.scanAllModMetadatas();
         }
     }
 
@@ -98,8 +97,8 @@ Item{
                             spacing: gameCanvas.dp(5)
 
                             // 数据绑定，响应式设计，您只需要修改这个，屏幕上模组列表就会自动改变，传入JSON对象。
-                            model: ModManager.model
-                            // 数据模板，定义每个条目应该长什么样？正好使用我们专门定义的ModItem.qml，数据（model）还会自动注入
+                            model: ModRegistry.modList
+                            // 数据模板，定义每个条目应该长什么样？正好使用我们专门定义的ModItem.qml，数据还会自动注入
                             delegate: ModItem {}
                         }
                     }
@@ -135,7 +134,7 @@ Item{
                             Image {
                                 // linux和windows不一样这个file
                                 function getfileUrl(absolutePath){
-                                    if (!absolutePath) return "qrc:/assets/default/images/icons/unknownMod.png";
+                                    if (!absolutePath) return PathUtil.image("icons/unknownMod");
                                     if (Qt.platform.os === "windows"){
                                         return "file:///" + absolutePath
                                     }
@@ -148,7 +147,7 @@ Item{
                                         root.selectedModAbsolutePath = modsListView.currentItem.mpath;
                                         return getfileUrl(modsListView.currentItem.micon);
                                     }
-                                    else return "qrc:/assets/default/images/icons/unknownMod.png";
+                                    else return PathUtil.image("icons/unknownMod");
                                 }
                                 Layout.preferredWidth: gameCanvas.dp(150)
                                 Layout.preferredHeight: gameCanvas.dp(150)

@@ -4,9 +4,9 @@
 #include <audio/FunkinSound.h>
 
 #include "audio/FunkinSoundSystem.h"
-#include "modding/scan/ModManager.h"
+#include "data/Context.h"
+#include "data/mod/ModRegistry.h"
 #include "utils/interseting/InterestingThings.h"
-#include "play/event/IHookEvents.h"
 #include "utils/Path.h"
 
 #ifdef Q_OS_ANDROID
@@ -14,11 +14,15 @@
 #endif
 
 // 暴露C++函数给QML调用
-inline void initQmlEngine(QQmlApplicationEngine &engine)
+inline void init(QQmlApplicationEngine &engine)
 {
-    engine.rootContext()->setContextProperty("SoundSystem",FunkinSoundSystem::instance());
-    engine.rootContext()->setContextProperty("ModManager",ModManager::instance());
-    engine.rootContext()->setContextProperty("PathUtil",PathUtil::instance());
+    // 初始化存储单例的中心
+    auto context = new Context();
+    // 虽然确实内存泄露了，但是他毕竟是全局存在！只需要初始化一次
+
+    engine.rootContext()->setContextProperty("SoundSystem",Context::soundSystem);
+    engine.rootContext()->setContextProperty("ModRegistry",Context::modRegistry);
+    engine.rootContext()->setContextProperty("PathUtil",Context::pathUtil);
     // 以后注册点别的
 }
 
@@ -62,9 +66,12 @@ int main(int argc, char *argv[])
     Path::copyAssets();
     #endif
 
+    QObject::connect();
+
     // 加载qml
     QQmlApplicationEngine engine;
-    initQmlEngine(engine);
+    init(engine);
+    // 有严格顺序，init必须放在前面！
     engine.load(QUrl(QStringLiteral("qrc:/qt/qml/fnf/QML/main.qml")));
 
     if (engine.rootObjects().isEmpty())

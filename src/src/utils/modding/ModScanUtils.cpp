@@ -3,15 +3,15 @@
 //
 #include "utils/modding/ModScanUtils.h"
 #include "../thirdParty/nlohmann/json.hpp"
+#include "data/Context.h"
 #include "data/character/CharacterData.h"
 #include "data/character/CharacterRegistry.h"
-#include "utils/exception/CustomException.h"
 #include "data/level/LevelData.h"
-#include "utils/VersionUtil.h"
-#include "data/level/LevelRegistry.h"
 #include "data/mod/ModRegistry.h"
+#include "data/notestyle/NoteStyleData.h"
 #include "data/song/SongData.h"
 #include "data/song/SongRegistry.h"
+#include "data/stage/StageData.h"
 #include "play/song/Song.h"
 #include "utils/file/FileUtil.h"
 #include "utils/Path.h"
@@ -46,7 +46,7 @@ ModEngineType ModScanUtils::judgeModEngine(const QString& modAbsolutePath)
 
 // 真正意义上解析模组！
 // TODO: Linux上大小写敏感，icon.png和icon.PNG完全是两个东西。等出问题了再修吧:)
-void ModScanUtils::scanPEModMetadata(QString& modAbsolutePath)
+void ModScanUtils::scanPEModMetadata(const QString& modAbsolutePath,ModRegistry* registryRef)
 {
     auto modMetadata = make_unique<ModMetadata>();
     modMetadata->modPath = modAbsolutePath;
@@ -78,7 +78,6 @@ void ModScanUtils::scanPEModMetadata(QString& modAbsolutePath)
         if (!id.has_value()) id = "Unnamed";
         modMetadata->id = id;
 
-
         if (j.contains("color") && j["color"].is_array()) {
             modMetadata->bgRGBColor = j["color"].get<vector<int>>();
         }
@@ -97,7 +96,7 @@ void ModScanUtils::scanPEModMetadata(QString& modAbsolutePath)
         MessageHandler::logInfo(modMetadata->toString(), "ModScanUtils");
 
         // 最终注册
-        ModRegistry::instance()->addEntry(id.value(),std::move(modMetadata));
+        registryRef->addEntry(id.value(),std::move(modMetadata));
     }
     catch (const std::exception& e)
     {
@@ -106,12 +105,13 @@ void ModScanUtils::scanPEModMetadata(QString& modAbsolutePath)
 }
 
 // TODO: Linux上大小写敏感，icon.png和icon.PNG完全是两个东西。等出问题了再修吧:)
-void ModScanUtils::scanVSModMetadata(QString& modAbsolutePath)
+void ModScanUtils::scanVSModMetadata(const QString& modAbsolutePath,ModRegistry* registryRef)
 {
     auto modMetadata = make_unique<ModMetadata>();
     modMetadata->modPath = modAbsolutePath;
     modMetadata->engineType = ModEngineType::VS;
 
+    // 我们把模组的文件夹作为他的id！PE和VS都是这么做的。
     optional<QString> id = FileUtil::getPathLeaf(modAbsolutePath);
     if (!id.has_value()) id = "Unnamed";
     modMetadata->id = id;
@@ -122,7 +122,6 @@ void ModScanUtils::scanVSModMetadata(QString& modAbsolutePath)
     if (!QFile::exists(cfgPath))
     {
         MessageHandler::logWarning(modAbsolutePath + "没有_polymod_meta.json！此模组无效。", "ModScanUtils");
-        return;
     }
 
     QFile cfgFile(cfgPath);
@@ -131,7 +130,6 @@ void ModScanUtils::scanVSModMetadata(QString& modAbsolutePath)
     if (!cfgFile.open(QIODevice::ReadOnly | QIODevice::Text))
     {
         MessageHandler::logWarning(dirName.fileName() + "无法解析_polymod_meta.json文件！此模组无效。", "ModScanUtils");
-        return;
     }
 
     try {
@@ -231,12 +229,12 @@ void ModScanUtils::scanVSModMetadata(QString& modAbsolutePath)
             modMetadata->contributors = currentStr;
         }
 
-        qInfo() << modMetadata->toString();
+        // qInfo() << modMetadata->toString();
         // 注册！
-        ModRegistry::instance()->addEntry(id.value(),std::move(modMetadata));
+        registryRef->addEntry(id.value(),std::move(modMetadata));
+        LOG_INFO("成功解析了模组元数据: " + id.value());
     }
-    catch (const std::exception& e)
-    {
+    catch (const std::exception& e){
         MessageHandler::logError(QString("解析" + modAbsolutePath + "时发生异常：") + e.what() + "已跳过。" + "\n", "ModScanUtils");
     }
 }
@@ -264,24 +262,68 @@ void ModScanUtils::scanOneMod(const ModMetadata& modMetadata)
 bool ModScanUtils::parseWeeks(const ModMetadata& modMetadata)
 {
     QString modAbsolutePath = modMetadata.modPath;
-    QString finalLevelDirPath = Path::getVSDataPath(EDataResourceType::levels,modAbsolutePath);
-
-    optional<QStringList> jsonFiles = FileUtil::getFileNames(finalLevelDirPath,"*.json");
-    if (!jsonFiles.has_value()) return false;
-
-    foreach(const QString& fileName, jsonFiles.value())
+    switch (modMetadata.engineType)
     {
-        QString oneJSONFile = finalLevelDirPath + QDir::separator() + fileName;
-        // 直接开始解析json
-        QString content = FileUtil::ReadFileToString(oneJSONFile);
+    case ModEngineType::VS: {
+            QString finalLevelDirPath = Path::getVSDataPath(EDataResourceType::levels,modAbsolutePath);
 
-        // 由于我们已经写好了from_json函数，因此可以直接获取！
-        json j = nlohmann::json::parse(content.toStdString());
-        optional<LevelData> levelData = LevelDataParser::parseLevelData_VS(j,fileName);
-        if (!levelData.has_value()) continue;
+            optional<QStringList> jsonFiles = FileUtil::getFileAbsolutePaths(finalLevelDirPath,"*.json");
+            if (!jsonFiles.has_value()) return false;
 
-        auto l_ptr = make_unique<LevelData>();
-        LevelRegistry::instance()->addEntry(levelData.value().name,std::move(l_ptr));
+            for(auto& filePath : jsonFiles.value())
+            {
+                // 直接开始解析json
+                QString content = FileUtil::ReadFileToString(filePath);
+                QString id = FileUtil::fetchIdFromFileName(filePath);
+
+                // 由于我们已经写好了from_json函数，因此可以直接获取！
+                json j = nlohmann::json::parse(content.toStdString());
+                auto levelData = LevelDataParser::parseLevelData_VS(j,filePath);
+                if (!levelData) continue;
+
+                Context::levelRegistry->addEntry(id,std::move(levelData));
+                LOG_INFO("成功解析了关卡: " + filePath);
+            }
+            break;
+        }
+    case ModEngineType::PE:
+        {
+            QVector<QString> PELevelDirPath = Path::getPEDataPath(EDataResourceType::levels,modAbsolutePath);
+            for (auto& entry : PELevelDirPath)
+            {
+                optional<QStringList> jsonFiles = FileUtil::getFileAbsolutePaths(entry,"*.json");
+                if (!jsonFiles.has_value()) continue;
+
+                // 然后获取里面所有的json文件
+                for (auto& jsonFile : jsonFiles.value())
+                {
+                    QString rawContent = FileUtil::ReadFileToString(jsonFile);
+                    try
+                    {
+                        json j = nlohmann::json::parse(rawContent.toStdString());
+                        unique_ptr<LevelData> levelData = LevelDataParser::parseLevelData_PE(j,jsonFile);
+                        if (!levelData) continue;
+
+                        QString idnum = FileUtil::genUID();
+                        QString id = FileUtil::fetchIdFromFileName(jsonFile) + idnum;
+                        // PE要id其实没啥用
+                        Context::levelRegistry->addEntry(id,std::move(levelData));
+                        LOG_PARSE_JSON_SUCCESS("Week",jsonFile);
+                    }
+                    catch (const std::exception& e)
+                    {
+                        LOG_JSON_PARSE_ERROR(e.what(),jsonFile);
+                    }
+                }
+            }
+
+            break;
+        }
+        default:
+        {
+            LOG_WARNING("暂不支持的模组类型。");
+            return false;
+        }
     }
 
     return true;
@@ -289,85 +331,96 @@ bool ModScanUtils::parseWeeks(const ModMetadata& modMetadata)
 
 bool ModScanUtils::parseSongs(const ModMetadata& modMetadata)
 {
-    QString modAbsolutePath = modMetadata.modPath;
-    // 接下来我们就得去songs目录下去找json了
-    QString songsRootPath = Path::getVSDataPath(EDataResourceType::songs, modAbsolutePath);
-    QDir dir(songsRootPath);
-    QStringList songsSubFolders = dir.entryList(QDir::Dirs | QDir::NoDotAndDotDot);
+    switch (modMetadata.engineType) {
+        case ModEngineType::VS: {
+            QString modAbsolutePath = modMetadata.modPath;
+            // 接下来我们就得去songs目录下去找json了
+            QString songsRootPath = Path::getVSDataPath(EDataResourceType::songs, modAbsolutePath);
+            QDir dir(songsRootPath);
+            QStringList songsSubFolders = dir.entryList(QDir::Dirs | QDir::NoDotAndDotDot);
 
-    for (const QString& songIdAndFolderName : songsSubFolders) {
-        QString thisSongDataFolderPath = songsRootPath + QDir::separator() + songIdAndFolderName;
-        QString defaultSongMetaFilePath = FileUtil::getDefaultSongMetaFilePath(thisSongDataFolderPath);
+            for (const QString& songIdAndFolderName : songsSubFolders) {
+                QString thisSongDataFolderPath = songsRootPath + QDir::separator() + songIdAndFolderName;
+                QString defaultSongMetaFilePath = FileUtil::getDefaultSongMetaFilePath(thisSongDataFolderPath);
 
-        optional<QString> thisMetaFileName = FileUtil::getPathLeaf(defaultSongMetaFilePath);
-        if (!thisMetaFileName.has_value())  continue;
+                optional<QString> thisMetaFileName = FileUtil::getPathLeaf(defaultSongMetaFilePath);
+                if (!thisMetaFileName.has_value())  continue;
 
-        QString thisChartFilePath = FileUtil::getDefaultSongChartFilePath(thisSongDataFolderPath);
-        try {
-            // 先解析普通元数据文件
-            json jMeta = json::parse(FileUtil::ReadFileToString(defaultSongMetaFilePath.toStdString()));
-            optional<SongMetaData> defaultMetadata = SongDataParser::parseSongMetaData(jMeta,thisMetaFileName.value());
-            // 先解析普通铺面文件
-            json jChart = json::parse(FileUtil::ReadFileToString(thisChartFilePath).toStdString());
-            SongChartData defaultChartData = SongDataParser::parseSongChartData(jChart,thisMetaFileName.value());
-
-            if (!defaultMetadata.has_value()) continue;
-            // 获得歌曲的变体名，并对其进行遍历
-            QVector<QString> songVariations = defaultMetadata.value().playData.songVariations;
-
-            // 根据SongCharacterData, 找到对应的ogg文件
-            QString playerId = defaultMetadata.value().playData.characters.player;
-            QString opponentId = defaultMetadata.value().playData.characters.opponent;
-
-            // 构建路径（尚未使用，原先想让metadata存储歌曲路径的，想想还是存id，动态拼接吧。）
-            QString defaultPlayerVocalPath = FileUtil::getSongFullPath(modAbsolutePath,false,playerId,"",songIdAndFolderName);
-            QString defaultOpponentVocalPath = FileUtil::getSongFullPath(modAbsolutePath,false,opponentId,"",songIdAndFolderName);
-            QString defaultInstPath = FileUtil::getSongFullPath(modAbsolutePath,true,"","","");
-
-            auto song = make_unique<Song>(songIdAndFolderName);
-            song->addVariationSong("default",defaultMetadata.value(),defaultChartData);
-
-            // 遍历变体
-            for (auto& songVariationId : songVariations)
-            {
+                QString thisChartFilePath = FileUtil::getDefaultSongChartFilePath(thisSongDataFolderPath);
                 try {
-                    // 变体不能嵌套变体！这是代码里面硬性规定的！
-                    QString thisVariationMetadataPath = FileUtil::getVariationSongMetaFilePath(thisSongDataFolderPath,songVariationId);
-                    QString thisVariationChartPath = FileUtil::getVariationSongChartFilePath(thisSongDataFolderPath,songVariationId);
+                    // 先解析普通元数据文件
+                    json jMeta = json::parse(FileUtil::ReadFileToString(defaultSongMetaFilePath.toStdString()));
+                    optional<SongMetaData> defaultMetadata = SongDataParser::parseSongMetaData(jMeta,thisMetaFileName.value());
+                    // 先解析普通铺面文件
+                    json jChart = json::parse(FileUtil::ReadFileToString(thisChartFilePath).toStdString());
+                    SongChartData defaultChartData = SongDataParser::parseSongChartData(jChart,thisMetaFileName.value());
 
-                    // erect变体只有erect或nightmare难度（目前）
-                    json jvmetadata = json::parse(FileUtil::ReadFileToString(thisVariationMetadataPath.toStdString()));
-                    optional<SongMetaData> variationMetadata = SongDataParser::parseSongMetaData(jvmetadata,thisVariationMetadataPath);
+                    if (!defaultMetadata.has_value()) continue;
+                    // 获得歌曲的变体名，并对其进行遍历
+                    QVector<QString> songVariations = defaultMetadata.value().playData.songVariations;
 
-                    if (!variationMetadata.has_value()) continue;
-                    // 音频文件路径（未使用）
-                    QString variationPlayerVoicePath = FileUtil::getSongFullPath(modAbsolutePath,false,playerId,songVariationId,songIdAndFolderName);
-                    QString variationOpponentPath = FileUtil::getSongFullPath(modAbsolutePath,false,opponentId,songVariationId,songIdAndFolderName);
-                    QString variationInstPath = FileUtil::getSongFullPath(modAbsolutePath,true,"",songVariationId,songIdAndFolderName);
+                    // 根据SongCharacterData, 找到对应的ogg文件
+                    QString playerId = defaultMetadata.value().playData.characters.player;
+                    QString opponentId = defaultMetadata.value().playData.characters.opponent;
 
-                    json jvChartData = json::parse(FileUtil::ReadFileToString(thisVariationChartPath.toStdString()));
-                    SongChartData variationChartData = SongDataParser::parseSongChartData(jvChartData,thisVariationChartPath);
+                    // 构建路径（尚未使用，原先想让metadata存储歌曲路径的，想想还是存id，动态拼接吧。）
+                    QString defaultPlayerVocalPath = FileUtil::getSongFullPath(modAbsolutePath,false,playerId,"",songIdAndFolderName);
+                    QString defaultOpponentVocalPath = FileUtil::getSongFullPath(modAbsolutePath,false,opponentId,"",songIdAndFolderName);
+                    QString defaultInstPath = FileUtil::getSongFullPath(modAbsolutePath,true,"","","");
 
-                    // 存储变体与铺面
-                    song->addVariationSong(songVariationId,variationMetadata.value(),variationChartData);
+                    auto song = make_unique<Song>(songIdAndFolderName);
+                    song->addVariationSong("default",defaultMetadata.value(),defaultChartData);
+
+                    // 遍历变体
+                    for (auto& songVariationId : songVariations)
+                    {
+                        try {
+                            // 变体不能嵌套变体！这是代码里面硬性规定的！
+                            QString thisVariationMetadataPath = FileUtil::getVariationSongMetaFilePath(thisSongDataFolderPath,songVariationId);
+                            QString thisVariationChartPath = FileUtil::getVariationSongChartFilePath(thisSongDataFolderPath,songVariationId);
+
+                            // erect变体只有erect或nightmare难度（目前）
+                            json jvmetadata = json::parse(FileUtil::ReadFileToString(thisVariationMetadataPath.toStdString()));
+                            optional<SongMetaData> variationMetadata = SongDataParser::parseSongMetaData(jvmetadata,thisVariationMetadataPath);
+
+                            if (!variationMetadata.has_value()) continue;
+                            // 音频文件路径（未使用）
+                            QString variationPlayerVoicePath = FileUtil::getSongFullPath(modAbsolutePath,false,playerId,songVariationId,songIdAndFolderName);
+                            QString variationOpponentPath = FileUtil::getSongFullPath(modAbsolutePath,false,opponentId,songVariationId,songIdAndFolderName);
+                            QString variationInstPath = FileUtil::getSongFullPath(modAbsolutePath,true,"",songVariationId,songIdAndFolderName);
+
+                            json jvChartData = json::parse(FileUtil::ReadFileToString(thisVariationChartPath.toStdString()));
+                            SongChartData variationChartData = SongDataParser::parseSongChartData(jvChartData,thisVariationChartPath);
+
+                            // 存储变体与铺面
+                            song->addVariationSong(songVariationId,variationMetadata.value(),variationChartData);
+                        }
+                        catch (json::parse_error& e)
+                        {
+                            MessageHandler::logError(" 异常已发生: "+ QString(e.what()) + "在" + songIdAndFolderName, "ModScanUtils::parseSongs");
+                            continue;
+                        }
+                    }
+
+                    Context::levelRegistry->addEntry(songIdAndFolderName,std::move(song));
+                    // 至此，我们终于完成了一首歌的构造！🎉🎉🎉🎉
+                    LOG_INFO("成功解析了歌曲铺面和元数据: " + songIdAndFolderName);
                 }
-                catch (json::parse_error& e)
+                catch (const json::parse_error& e)
                 {
-                    MessageHandler::logError(" 异常已发生: "+ QString(e.what()) + "在" + songIdAndFolderName, "ModScanUtils::parseSongs");
+                    LOG_JSON_PARSE_ERROR(e.what(),songIdAndFolderName);
                     continue;
                 }
             }
+        }
+    case ModEngineType::PE:
+            {
 
-            SongRegistry::instance()->addEntry(songIdAndFolderName,std::move(song));
-            // 至此，我们终于完成了一首歌的构造！🎉🎉🎉🎉
-        }
-        catch (const json::parse_error& e)
-        {
-            QString why = e.what();
-            QString res = "解析JSON时发生异常" + why;
-            MessageHandler::logError(why + res + "文件: " + songIdAndFolderName, "ModScanUtils::parseSongs");
-            continue;
-        }
+            }
+        default:
+            {
+                LOG_WARNING("暂不支持的模组类型。");
+            }
     }
 
     return true;
@@ -393,24 +446,69 @@ bool ModScanUtils::parseCharacters(const ModMetadata& modMetadata)
             if (cd == nullptr) continue;
 
             QString id = FileUtil::fetchIdFromFileName(file);
-            CharacterRegistry::instance()->addEntry(id,std::move(cd));
+            Context::characterRegistry->addEntry(id,std::move(cd));
+            LOG_INFO("成功解析了角色: " + id);
         }
         catch (const json::parse_error& e)
         {
-            QString why = e.what();
-            QString res = "解析JSON时发生异常" + why;
-            MessageHandler::logError(why + res + "文件: " + file, "ModScanUtils");
+            LOG_JSON_PARSE_ERROR(e.what(),file);
             continue;
         }
     }
+
+    return true;
 }
 
 bool ModScanUtils::parseStages(const ModMetadata& modMetadata)
 {
+    QString modPath = modMetadata.modPath;
+    QString modStageJsonPath = Path::getVSDataPath(EDataResourceType::stages,modPath);
 
+    optional<QStringList> fileList = FileUtil::getFileAbsolutePaths(modStageJsonPath,".json");
+    if (!fileList.has_value()) return false;
+    for (auto& filepath : fileList.value())
+    {
+        try
+        {
+            QString rawJSON = FileUtil::ReadFileToString(filepath);
+            json j = json::parse(rawJSON.toStdString());
+            unique_ptr<StageData> stageData = StageDataParser::parseStageData(j,filepath);
+            if (!stageData) continue;
+            QString id = FileUtil::fetchIdFromFileName(filepath);
+            Context::stageRegistry->addEntry(id,std::move(stageData));
+
+            LOG_INFO("成功解析了StageData: " + id);
+
+        } catch (const json::parse_error& e) {
+            LOG_ERROR(QString("解析JSON" + filepath + "时发生异常: ") + e.what() + "已跳过。");
+        }
+    }
+
+    return true;
 }
 
 bool ModScanUtils::parseNotestyles(const ModMetadata& modMetadata)
 {
+    QString modPath = modMetadata.modPath;
+    QString modStageJsonPath = Path::getVSDataPath(EDataResourceType::notestyles,modPath);
 
+    optional<QStringList> fileList = FileUtil::getFileAbsolutePaths(modStageJsonPath,".json");
+    if (!fileList.has_value()) return false;
+    for (auto& filepath : fileList.value())
+    {
+        try
+        {
+            QString rawJSON = FileUtil::ReadFileToString(filepath);
+            json j = json::parse(rawJSON.toStdString());
+            unique_ptr<NoteStyleData> noteStyleData = NoteStyleParser::parseNoteStyleData(j,filepath);
+            if (!noteStyleData) continue;
+            QString id = FileUtil::fetchIdFromFileName(filepath);
+            Context::noteStyleRegistry->addEntry(id,std::move(noteStyleData));
+
+            LOG_INFO("成功解析了StageData: " + id);
+
+        } catch (const json::parse_error& e) {
+            LOG_ERROR(QString("解析JSON" + filepath + "时发生异常: ") + e.what() + "已跳过。");
+        }
+    }
 }

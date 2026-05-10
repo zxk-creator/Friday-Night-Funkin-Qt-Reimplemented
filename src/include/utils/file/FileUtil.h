@@ -6,6 +6,7 @@
 
 #include <qiodevice.h>
 #include <optional>
+#include <random>
 #include <string>
 
 #include "utils/Path.h"
@@ -109,4 +110,20 @@ namespace FileUtil
      * @return id
      */
     QString fetchIdFromFileName(const QString& fileNameOrPath);
+
+    // 通过当前时间生成UUID（肯定不会重复，除非米哈游有100亿以上的玩家，而且你装了一万个PE模组）
+    QString genUID()
+    {
+        static std::atomic<uint64_t> counter{0};
+        uint64_t seq = counter.fetch_add(1, std::memory_order_relaxed);
+
+        auto now = std::chrono::system_clock::now();
+        auto timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(
+            now.time_since_epoch()
+        ).count();
+
+        return QString("%1%2")
+            .arg(timestamp % 100000000, 8, 10, QChar('0'))
+            .arg(seq % 10000, 4, 10, QChar('0'));
+    }
 }
