@@ -38,5 +38,6 @@ public:
     QString contributor() const { return tr("贡献者: <br/>"); }
 
     // 解析模组相关
-    QString unknownWeekName() const { return "未命名周目"; }
+    QString unknownWeekName() const { return tr("未命名周目"); }
+    QString unknownAuthor() const { return  tr("一个神奇的PE作者"); }
 };

@@ -4,6 +4,7 @@
 #include <qqmlintegration.h>
 
 #include "QDir"
+#include "message/MessageHandler.h"
 #include "modding/ModEngineType.h"
 
 using FunkinPath = QString;
@@ -32,8 +33,9 @@ enum class AssetType {
 };
 
 /**
-  * @brief 全平台适用。Windows若安装在Program Files目录下需要管理员权限，Android若没有授予管理所有文件的权限，mod功能将无法使用。
-  */
+ * 提供通用路径相关操作的类
+ * 全平台适用。Windows若安装在Program Files目录下需要管理员权限，Android若没有授予管理所有文件的权限，mod功能将无法使用。
+ */
 class Path
 {
 public:
@@ -81,28 +83,29 @@ public:
 	 * @param filePath 绝对路径，相对路径
 	 * @return 真 绝对路径。
 	 */
-	static QString finalModPath(const QString& filePath);
+	[[deprecated]] static QString finalModPath(const QString& filePath);
 
 	/**
 	 * @brief 获取mods目录下的所有子目录路径并返回一个数组
 	**/
-	static QVector<QString> getAllModFolderPaths();
+	static QVector<QString> getModSubFolderPaths();
 
+	static QStringList getSubDirs(const QString& parentFolderPath);
+};
+
+/**
+  * 官方引擎特有路径方法
+  */
+class PathVS
+{
+public:
 	/**
 	 * 获取官方引擎data目录下json所在路径，返回值比如（省掉了前面的内容）"coolmod/data/characters")
 	 * @param type 资源类型
 	 * @param modAbsolutePath 模组根目录绝对路径
 	 * @return 构造好的路径，如果您传入了错误的数据，会导致异常，程序终止防止你写错。
 	 */
-	static QString getVSDataPath(EDataResourceType type, const QString& modAbsolutePath);
-
-	/**
-	 * 获取PE模组里面的json文件所在路径
-	 * @param type 资产类型
-	 * @param modAbsolutePath 模组根目录
-	 * @return 找到的绝对路径(由于shared目录存在，因此返回数组，需要遍历执行)
-	 */
-	static QVector<QString> getPEDataPath(EDataResourceType type, const QString& modAbsolutePath);
+	static QString getDataPath(EDataResourceType type, const QString& modAbsolutePath);
 
 	/**
 	 * 获取ogg或mp3文件所在位置
@@ -112,14 +115,14 @@ public:
 	 */
 	static QString getVSSongFilePath(const QString& modAbsolutePath,const QString& songId)
 	{
-		return modAbsolutePath + QDir::separator() + "songs" + QDir::separator() + songId;
+		return QDir::cleanPath(modAbsolutePath + "/songs/" + songId);
 	}
 
 private:
 	// 下面是我们模仿原版写的方法！用于HScript调用
 	static void setCurrentLevel(const QString& level)
 	{
-		currentLevel = level;
+		Path::currentLevel = level;
 	}
 
 	// 获得内置或者mod资源
@@ -153,13 +156,52 @@ public:
 	 * @param library :前面的库名，如shared，{modId}(解析json的时候必加，否则找不到！)，不加自动查找所有位置
 	 * @return 构造好的绝对路径
 	 */
-	static QString file(const QString& file, const QString& type, const QString& library, ModEngineType modType);
+	static std::optional<QString> file(const QString& file, const QString& type, const QString& library = "");
 
-	static QString image(const QString& key, ModEngineType modType, const QString& library = "") { return file( "images/" + key, "IMAGE", library,modType); }
-	static QString sound(const QString& key, ModEngineType modType, const QString& library = "") { return file("sounds/" + key, "SOUND", library,modType); }
-	static QString music(const QString& key, ModEngineType modType, const QString& library = "") { return file("music/" + key, "MUSIC", library,modType); }
-	static QString json(const QString& key, ModEngineType modType, const QString& library = "") { return file(key, "TEXT", library,modType) + ".json"; }
-	static QString font(const QString& key, ModEngineType modType, const QString& library = "") { return file("fonts/" + key, "TEXT", library,modType);}
+	static std::optional<QString> image(const QString& key) { return file( "images/" + key, "IMAGE"); }
+	static std::optional<QString> sound(const QString& key) { return file("sounds/" + key, "SOUND"); }
+	static std::optional<QString> music(const QString& key) { return file("music/" + key, "MUSIC"); }
+	// 直接返回的是就是json
+	static std::optional<QString> json(const QString& key)
+	{
+		auto fileopt = file(key, "TEXT");
+		if (!fileopt.has_value())
+		{
+			LOG_WARNING(false,QString("未找到文件") + key);
+			return std::nullopt;
+		}
+		return fileopt.value() + ".json";
+	}
+	static std::optional<QString> font(const QString& key) { return file("fonts/" + key, "TEXT");}
+};
+
+/**
+ * PE特有的一些方法逻辑！
+ */
+class PathPE
+{
+public:
+
+	/**
+	 * 获取PE模组里面的json文件所在路径
+	 * @param type 资产类型
+	 * @param modAbsolutePath 模组根目录
+	 * @return 找到的绝对路径(由于shared目录存在，因此返回数组，需要遍历执行)
+	 */
+	static QVector<QString> getDataPath(EDataResourceType type, const QString& modAbsolutePath);
+
+	/**
+	 * 传入相对路径，自动给你返回绝对路径！(自动会检查路径是否存在)
+	 * @param file 文件相对路径
+	 * @param type 类型，比如IMAGE（内容与本文键上面的枚举一一对应）
+	 * @return (可能为空) 绝对路径
+	 */
+	static std::optional<QString> file(const QString& modAbsolutePath,const QString& file, const QString& type);
+
+	static std::optional<QString> image(const QString& modAbsolutePath,const QString& key) { return file(modAbsolutePath,"/images/" + key, "IMAGE"); }
+	static std::optional<QString> sound(const QString& modAbsolutePath,const QString& key) { return file(modAbsolutePath,"/sounds/" + key, "SOUND"); }
+	static std::optional<QString> music(const QString& modAbsolutePath,const QString& key) { return file(modAbsolutePath,"/music/" + key, "MUSIC"); }
+	static std::optional<QString> font(const QString& modAbsolutePath,const QString& key) { return file(modAbsolutePath,"/fonts/" + key, "TEXT");}
 };
 
 // 辅助类：给QML调用用的，还必须遵守人家的单例模式
@@ -172,12 +214,25 @@ public:
 
 	Q_INVOKABLE QString font(const QString& name)
 	{
-		return "file:///" + Path::font(name,ModEngineType::VS);
+		auto fileopt = PathVS::font(name);
+		if (!fileopt.has_value())
+		{
+			LOG_WARNING(false, QString("QML尝试调用font获取字体时，不存在文件") + name + ", 已返回空字符串");
+			return "no_such_file_or_dir";
+		}
+		return "file:///" + fileopt.value();
 	}
 
 	Q_INVOKABLE QString image(const QString& name)
 	{
-		return "file:///" + Path::image(name,ModEngineType::VS);
+		auto fileopt = PathVS::image(name);
+		if (!fileopt.has_value())
+		{
+			LOG_WARNING(false, QString("QML尝试调用image获取图片时，不存在文件") + name + ", 已返回空字符串");
+			return "";
+		}
+		return "file:///" + fileopt.value();
 	}
-};
 
+	Q_INVOKABLE QString getPathLeaf(const QString& path);
+};

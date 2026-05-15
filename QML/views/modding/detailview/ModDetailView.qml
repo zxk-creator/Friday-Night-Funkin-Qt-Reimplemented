@@ -13,9 +13,14 @@ Item {
     // 接收传过来的路径！我们这里使用字符串，代表模组文件的路径
     property string modAbsolutePath;
 
+    Component.onCompleted: {
+        ModRegistry.parseOneMod(modAbsolutePath)
+    }
+
     Image{
         id: backgroundImage
         anchors.fill: parent
+        cache: true
         source: PathUtil.image("menuBG")
         fillMode: Image.PreserveAspectCrop
         z: -10

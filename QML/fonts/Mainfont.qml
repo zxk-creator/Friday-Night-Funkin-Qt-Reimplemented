@@ -13,6 +13,12 @@ Item {
     property alias color: internalText.color
     property bool showTextOutline: true
 
+    property alias textFormat: internalText.textFormat
+    property alias lineHeight: internalText.lineHeight
+    property alias wrapMode: internalText.wrapMode
+    property alias renderType: internalText.renderType
+    property alias fontFamily: internalText.font.family
+
     // 让Item的大小自动跟随内部文字大小
     implicitWidth: internalText.implicitWidth
     implicitHeight: internalText.implicitHeight

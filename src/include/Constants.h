@@ -43,3 +43,9 @@ namespace StageDataRelative
     static inline const QString STAGE_DATA_VERSION = "1.0.2";
     static inline const QString STAGE_DATA_VERSION_RULE = ">=1.0.0 <1.1.0";
 }
+
+namespace Common
+{
+    static inline const QString CURRENT_ENGINE_VERSION = "0.0.0.5";
+    static inline const QString DEFAULT_GENERATED_BY = "Quark Engine - " + CURRENT_ENGINE_VERSION;
+}

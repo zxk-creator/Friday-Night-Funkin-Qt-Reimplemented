@@ -18,13 +18,14 @@ Item{
     property string selectedModAbsolutePath: ""
 
     Component.onCompleted: {
-
+        // ModRegistry.scanAllModMetadatas();
     }
 
     Image{
         id: backgroundImage
         anchors.fill: parent
         source: PathUtil.image("menuBG")
+        cache: true
         fillMode: Image.PreserveAspectCrop
         z: -10
     }
@@ -214,8 +215,8 @@ Item{
                             hoverMsg: qsTr("查看此模组的详细信息，比如角色贴图，箭头皮肤，歌曲等等。")
                             showHoverMsg: true
                             onClicked:{
-                                // 后面跟一个"modData": ..代表传入的数据
-                                mainStack.push("detailview/ModDetailView.qml",root.selectedModAbsolutePath);
+                                // 后面跟一个"modData": ..代表传入的数据(modPath这个名字随便起)
+                                mainStack.push("detailview/ModDetailView.qml", {"modAbsolutePath": root.selectedModAbsolutePath});
                             }
                             showPressMsg: false;
                         }

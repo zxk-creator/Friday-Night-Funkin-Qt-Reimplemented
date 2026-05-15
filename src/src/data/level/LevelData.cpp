@@ -18,7 +18,7 @@ void LevelPropData::from_json(const json& j)
     if (j.contains("assetPath") && j["assetPath"].is_string()) {
         assetPath = QString::fromStdString(j["assetPath"].get<std::string>());
     } else {
-        MessageHandler::logError(QString("LevelPropData 缺少必填字段 assetPath，已设置为空字符串"), "LevelPropData");
+        MessageHandler::logError(false,QString("LevelPropData 缺少必填字段 assetPath，已设置为空字符串"), "LevelPropData");
         assetPath = "";
     }
 
@@ -26,7 +26,7 @@ void LevelPropData::from_json(const json& j)
     if (j.contains("scale") && j["scale"].is_number()) {
         scale = j["scale"].get<float>();
     } else if (j.contains("scale")) {
-        MessageHandler::logWarning(QString("LevelPropData 的 scale 字段类型错误，应为数字，使用默认值 1.0"), "LevelPropData");
+        MessageHandler::logWarning(false,QString("LevelPropData 的 scale 字段类型错误，应为数字，使用默认值 1.0"), "LevelPropData");
         scale = 1.0f;
     } else {
         scale = 1.0f;
@@ -36,7 +36,7 @@ void LevelPropData::from_json(const json& j)
     if (j.contains("alpha") && j["alpha"].is_number()) {
         alpha = j["alpha"].get<float>();
     } else if (j.contains("alpha")) {
-        MessageHandler::logWarning(QString("LevelPropData 的 alpha 字段类型错误，应为数字，使用默认值 1.0"), "LevelPropData");
+        MessageHandler::logWarning(false,QString("LevelPropData 的 alpha 字段类型错误，应为数字，使用默认值 1.0"), "LevelPropData");
         alpha = 1.0f;
     } else {
         alpha = 1.0f;
@@ -46,7 +46,7 @@ void LevelPropData::from_json(const json& j)
     if (j.contains("isPixel") && j["isPixel"].is_boolean()) {
         isPixel = j["isPixel"].get<bool>();
     } else if (j.contains("isPixel")) {
-        MessageHandler::logWarning(QString("LevelPropData 的 isPixel 字段类型错误，应为布尔值，使用默认值 false"), "LevelPropData");
+        MessageHandler::logWarning(false,QString("LevelPropData 的 isPixel 字段类型错误，应为布尔值，使用默认值 false"), "LevelPropData");
         isPixel = false;
     } else {
         isPixel = false;
@@ -56,7 +56,7 @@ void LevelPropData::from_json(const json& j)
     if (j.contains("danceEvery") && j["danceEvery"].is_number()) {
         danceEvery = j["danceEvery"].get<float>();
     } else if (j.contains("danceEvery")) {
-        MessageHandler::logWarning(QString("LevelPropData 的 danceEvery 字段类型错误，应为数字，使用默认值 1.0"), "LevelPropData");
+        MessageHandler::logWarning(false,QString("LevelPropData 的 danceEvery 字段类型错误，应为数字，使用默认值 1.0"), "LevelPropData");
         danceEvery = 1.0f;
     } else {
         danceEvery = 1.0f;
@@ -67,11 +67,11 @@ void LevelPropData::from_json(const json& j)
         try {
             offsets = j["offsets"].get<std::vector<float>>();
         } catch (const std::exception& e) {
-            MessageHandler::logWarning(QString("LevelPropData 的 offsets 字段解析失败：%1，使用默认值 [0, 0]").arg(e.what()), "LevelPropData");
+            MessageHandler::logWarning(false,QString("LevelPropData 的 offsets 字段解析失败：%1，使用默认值 [0, 0]").arg(e.what()), "LevelPropData");
             offsets = {0.0f, 0.0f};
         }
     } else if (j.contains("offsets")) {
-        MessageHandler::logWarning(QString("LevelPropData 的 offsets 字段类型错误，应为数组，使用默认值 [0, 0]"), "LevelPropData");
+        MessageHandler::logWarning(false,QString("LevelPropData 的 offsets 字段类型错误，应为数组，使用默认值 [0, 0]"), "LevelPropData");
         offsets = {0.0f, 0.0f};
     } else {
         offsets = {0.0f, 0.0f};
@@ -87,11 +87,11 @@ void LevelPropData::from_json(const json& j)
                 animations.push_back(ad);
             }
         } catch (const std::exception& e) {
-            MessageHandler::logWarning(QString("LevelPropData 的 animations 字段解析失败：%1，使用空数组").arg(e.what()), "LevelPropData");
+            MessageHandler::logWarning(false,QString("LevelPropData 的 animations 字段解析失败：%1，使用空数组").arg(e.what()), "LevelPropData");
             animations.clear();
         }
     } else if (j.contains("animations")) {
-        MessageHandler::logWarning(QString("LevelPropData 的 animations 字段类型错误，应为数组，使用空数组"), "LevelPropData");
+        MessageHandler::logWarning(false,QString("LevelPropData 的 animations 字段类型错误，应为数组，使用空数组"), "LevelPropData");
         animations.clear();
     } else {
         animations.clear();
@@ -101,7 +101,7 @@ void LevelPropData::from_json(const json& j)
     if (j.contains("startingAnimation") && j["startingAnimation"].is_string()) {
         startingAnimation = QString::fromStdString(j["startingAnimation"].get<std::string>());
     } else if (j.contains("startingAnimation")) {
-        MessageHandler::logWarning(QString("LevelPropData 的 startingAnimation 字段类型错误，应为字符串，使用空字符串"), "LevelPropData");
+        MessageHandler::logWarning(false,QString("LevelPropData 的 startingAnimation 字段类型错误，应为字符串，使用空字符串"), "LevelPropData");
         startingAnimation = "";
     } else {
         startingAnimation = "";
@@ -111,7 +111,7 @@ void LevelPropData::from_json(const json& j)
     if (j.contains("flipX") && j["flipX"].is_boolean()) {
         flipX = j["flipX"].get<bool>();
     } else if (j.contains("flipX")) {
-        MessageHandler::logWarning(QString("LevelPropData 的 flipX 字段类型错误，应为布尔值，使用默认值 false"), "LevelPropData");
+        MessageHandler::logWarning(false,QString("LevelPropData 的 flipX 字段类型错误，应为布尔值，使用默认值 false"), "LevelPropData");
         flipX = false;
     } else {
         flipX = false;
@@ -129,15 +129,15 @@ bool LevelData::from_json(const json& j)
 
     // 必填字段name
     if (!j.contains("name") || !j["name"].is_string()) {
-        MessageHandler::logError(QString("缺少字段 'name'，将使用默认值。"), "LevelData");
+        MessageHandler::logError(false,QString("缺少字段 'name'，将使用默认值。"), "LevelData");
         name = Context::lang->unknownWeekName();
     }
     else name = QString::fromStdString(j["name"].get<std::string>());
 
     // week1，week2那个艺术字图片
     if (!j.contains("titleAsset") || !j["titleAsset"].is_string()) {
-        MessageHandler::logError(QString("缺少字段'titleAsset',将使用默认值。"), "LevelData");
-        titleAsset = Path::image("/storymenu/unknownWeek",ModEngineType::VS);
+        MessageHandler::logError(false,QString("缺少字段'titleAsset',将使用默认值。"), "LevelData");
+        titleAsset = PathVS::image("/storymenu/unknownWeek").value();
     }
     // 多一个/是为了防御型编程，所以一定要使用QDir::cleanPath进行去除路径！
     else titleAsset = QDir::separator() + QString::fromStdString(j["titleAsset"].get<std::string>());
@@ -160,7 +160,7 @@ bool LevelData::from_json(const json& j)
 
     // 必填字段：songs
     if (!j.contains("songs") || !j["songs"].is_array()) {
-        MessageHandler::logError(QString("缺少字段 'songs'"), "LevelData");
+        MessageHandler::logError(false,QString("缺少字段 'songs'"), "LevelData");
         return false;
     }
 
@@ -168,7 +168,7 @@ bool LevelData::from_json(const json& j)
         if (song.is_string()) {
             songs.push_back(QString::fromStdString(song.get<std::string>()));
         } else {
-            MessageHandler::logWarning(QString("songs 数组元素类型错误，应为字符串"), "LevelData");
+            MessageHandler::logWarning(false,QString("songs 数组元素类型错误，应为字符串"), "LevelData");
         }
     }
 
@@ -188,13 +188,13 @@ std::unique_ptr<LevelData> LevelDataParser::parseLevelData_VS(const json& j, con
 
     if (!data->from_json(j)) {
 
-        MessageHandler::logError(QString("解析关卡数据失败，必填字段缺失: %1").arg(filename), "LevelDataParser");
+        MessageHandler::logError(false,QString("解析关卡数据失败，必填字段缺失: %1").arg(filename), "LevelDataParser");
         return nullptr;
     }
 
     // 版本验证
-    if (!VersionUtil::validateVersionStr(data->version, LevelDataRelative::LEVEL_DATA_VERSION)) {
-        Exception::logVersionInvalid(data->version, LevelDataRelative::LEVEL_DATA_VERSION, filename);
+    if (!VersionUtil::validateVersionStr(data->version, LevelDataRelative::LEVEL_DATA_VERSION_RULE)) {
+        Exception::logVersionInvalid(data->version, LevelDataRelative::LEVEL_DATA_VERSION_RULE, filename);
         return nullptr;
     }
 
@@ -207,7 +207,7 @@ unique_ptr<LevelData> LevelDataParser::parseLevelData_PE(const json& j, const QS
     auto levelData_PE = make_unique<LevelData>();
 
     // 实际上PE没有版本号，我是随便设置的。
-    levelData_PE->version = "1.0.1";
+    levelData_PE->version = LevelDataRelative::LEVEL_DATA_VERSION;
 
     // 1. 基本信息
     if (j.contains("storyName")) {

@@ -8,6 +8,7 @@
 #include <memory>
 #include "data/animation/AnimationData.h"
 #include "nlohmann/json.hpp"
+#include "utils/message/MessageHandler.h"
 
 using json = nlohmann::json;
 
@@ -17,17 +18,6 @@ enum class NoteDirection {
     Up,
     Right
 };
-
-// 前向声明
-struct NoteStyleData_Note;
-struct NoteStyleData_Countdown;
-struct NoteStyleData_NoteStrumline;
-struct NoteStyleData_NoteSplash;
-struct NoteStyleData_HoldNoteCoverDirectionData;
-struct NoteStyleData_HoldNoteCover;
-struct NoteStyleData_ComboNum;
-struct NoteStyleData_Judgement;
-struct NoteStyleData_HoldNote;
 
 template<typename T>
 struct NoteStyleAssetData : ISerializable {
@@ -230,6 +220,54 @@ struct NoteStyleData : ISerializable {
     }
 };
 
-namespace NoteStyleParser{
-    std::unique_ptr<NoteStyleData> parseNoteStyleData(const json& j, const QString& filepath = "");
+namespace NoteStyleParser {
+    std::unique_ptr<NoteStyleData> parseNoteStyleData_VS(const json& j, const QString& filepath = "");
+    /**
+     * PE的模组系统与官方的差异较大，箭头皮肤引用被定义在songJson里面，UI引用被定义在stageJson里面
+     * @param songJson data目录下歌曲的目录中的json文件内容（noteSkin和noteSplash字段所在位置）
+     * @param stageJson ui相关配置所在文件，舞台的配置文件
+     * @param filepath 调试用
+     * @return 符合官方引擎规范的箭头皮肤数据
+     */
+    std::unique_ptr<NoteStyleData> parseNoteStyleData_PE(const json& songJson,const json& stageJson,const QString& modAbsolutePath, const QString& filepath = "");
+
+    /**
+     * 将歌曲 JSON 和舞台 JSON 按 stage 字段配对
+     * @param stageJsons 所有舞台 JSON 的 vector
+     * @param songJsons 所有歌曲 JSON 的 vector
+     * @return 配对的 vector，每个元素是 (stageJson, songJson)
+     *         如果某歌曲找不到对应的舞台，舞台位置为null或空 json
+     */
+    QVector<std::pair<json,json>> buildNoteStageMap(const QVector<json>& stageJsons,const QVector<json>& songJsons,
+        const QVector<QString>& stageFilePaths);
+
+    // 获取箭头皮肤名称（带默认值）
+    inline QString getNoteSkinsNameOrDefault(const json& songJson, const QString& defaultValue)
+    {
+        json songData = songJson;
+        if (songJson.contains("song") && songJson["song"].is_object()) {
+            songData = songJson["song"];
+        }
+
+        if (songData.contains("arrowSkin") && songData["arrowSkin"].is_string()) {
+            return QString::fromStdString(songData["arrowSkin"].get<std::string>());
+        }
+        return defaultValue;
+    }
+
+    // 获取打击特效名称（带默认值）
+    inline QString getNoteSplashNameOrDefault(const json& songJson, const QString& defaultValue)
+    {
+        json songData = songJson;
+        if (songJson.contains("song") && songJson["song"].is_object()) {
+            songData = songJson["song"];
+        }
+
+        if (songData.contains("splashSkin") && songData["splashSkin"].is_string()) {
+            return QString::fromStdString(songData["splashSkin"].get<std::string>());
+        }
+        return defaultValue;
+    }
+
+
 }

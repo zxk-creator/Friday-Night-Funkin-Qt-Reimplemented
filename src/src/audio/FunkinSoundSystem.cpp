@@ -26,7 +26,7 @@ void FunkinSoundSystem::initBuildInSounds() {
     this->backSound = new FunkinSound(true,Path::getDefaultSoundPath(EDefaultSoundType::back),ESoundType::uiSound,false,"取消音效");
     this->scrollSound = new FunkinSound(true,Path::getDefaultSoundPath(EDefaultSoundType::scroll),ESoundType::uiSound,false,"滚动音效");
     this->confirmSound = new FunkinSound(true,Path::getDefaultSoundPath(EDefaultSoundType::confirm),ESoundType::uiSound,false,"确认音效");
-    this->infoSound = new FunkinSound(true,Path::sound("boop"),ESoundType::uiSound,false,"提示音音效");
+    this->infoSound = new FunkinSound(true,PathVS::sound("boop").value(),ESoundType::uiSound,false,"提示音音效");
 }
 
 void FunkinSoundSystem::setSoundVolume(float newVolume, ESoundType soundType) {

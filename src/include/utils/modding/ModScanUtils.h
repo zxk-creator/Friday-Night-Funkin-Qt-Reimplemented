@@ -18,11 +18,11 @@ public:
      * 注意，这是扫描单个模组的元数据文件，真的启动扫描的方法在ModManager里面，调用后，会自动将元数据注册到注册表中。
      * @param modAbsolutePath 模组内容所在的根目录
      */
-    static void scanPEModMetadata(const QString& modAbsolutePath,ModRegistry* registryRef);
+    static void scanPEModMetadata(const QString& modAbsolutePath);
     /**
      * 参数和作用同上。
      */
-    static void scanVSModMetadata(const QString& modAbsolutePath,ModRegistry* registryRef);
+    static void scanVSModMetadata(const QString& modAbsolutePath);
 
     /** TODO:先扔这儿了 **/
     static void scanKEModMetadata(const QString& modAbsolutePath) {}

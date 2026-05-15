@@ -24,8 +24,7 @@ enum class ModParseExcpetionType
 class Exception
 {
 public:
-    static void logParseJSONException(const string& message,const string& functionName,const string& fileName,int atLine);
-    static void logParseJSONException(const QString& message, const QString& functionName, const QString& fileName, int atLine);
+    static void logParseJSONException(bool showMessageBox,const QString& message, const QString& functionName, const QString& fileName, int atLine);
     // 为了防止我写错逻错故意设置的自杀行为
     static void logNullPointerException(const string& message,const string& functionName,int atLine);
     static void logParseModException(ModParseExcpetionType excpetionType,const QString& file);
@@ -38,11 +37,8 @@ public:
 };
 
 // 自动获取函数名和行号，使用的时候直接LOG_JSON_PARSE_ERROR(msg,filename)这两个msg和filename替换一下即可
-#define LOG_JSON_PARSE_ERROR(msg,filename) \
-    Exception::logParseJSONException(msg,__FUNCTION__,filename,__LINE__);
-
-#define LOG_JSON_PARSE_ERROR_Q(msg, fileName) \
-    Exception::logParseJSONException(msg, __FUNCTION__, fileName, __LINE__)
+#define LOG_JSON_PARSE_ERROR(showDialog,msg, fileName) \
+    Exception::logParseJSONException(showDialog,msg, __FUNCTION__, fileName, __LINE__)
 
 #define LOG_NULL_PTR_ERROR(msg) \
     Exception::logNullPointerException(msg, __FUNCTION__, __LINE__)

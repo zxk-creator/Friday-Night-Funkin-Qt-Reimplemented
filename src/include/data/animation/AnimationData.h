@@ -11,7 +11,11 @@
 
 using json = nlohmann::json;
 
-struct UnnamedAnimationData : ISerializable{
+/**
+ * 存的是动画的元数据配置（名称，前缀，偏移，帧率，是否循环等等，而不是每一帧的动画数据）
+ * 人话：告诉动画系统如何从文件中取得数据，而不存储每一帧的数据
+ */
+struct UnnamedAnimationData : ISerializable {
     std::optional<QString> prefix;
     std::optional<QString> assetPath;
     std::vector<float> offsets = {0, 0};
@@ -91,18 +95,18 @@ struct UnnamedAnimationData : ISerializable{
 };
 
 struct AnimationData : UnnamedAnimationData{
-    std::string name;
+    QString name;
 
     void from_json(const json& j) {
         // 先调用父类的 from_json
         UnnamedAnimationData::from_json(j);
         // 再解析自己的成员
-        if (j.contains("name")) name = j["name"].get<std::string>();
+        if (j.contains("name")) name = QString::fromStdString(j["name"].get<std::string>());
     }
 
     QString toString() const override
     {
-        QString res = "动画名称: " + QString::fromStdString(name) + "\n";
+        QString res = "动画名称: " + name + "\n";
         res += UnnamedAnimationData::toString();
         return res;
     }

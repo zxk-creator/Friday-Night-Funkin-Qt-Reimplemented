@@ -10,13 +10,11 @@
 using json = nlohmann::json;
 
 // 什么意思？这代表一个数组，单独的一个float代表宽度和高度缩放1.5倍，数组则是第一个宽度缩放多少倍，第二个高度缩放多少倍。
-using EitherFloatOrFloats = std::variant<float, QVector<float>>;
-
 struct StageDataCharacter : ISerializable {
     int zIndex = 0;
     QVector<float> position = {0, 0};
     float scale = 1.0f;
-    QVector<float> cameraOffsets;           // 可选
+    QVector<float> cameraOffsets;
     QVector<float> scroll = {1, 1};
     float alpha = 1.0f;
     float angle = 0.0f;
@@ -29,7 +27,7 @@ struct StageDataCharacter : ISerializable {
     }
 };
 
-struct StageDataProp : ISerializable {
+struct StagePropData : ISerializable {
     std::optional<QString> name;
     QString assetPath;
     QVector<float> position;
@@ -37,7 +35,8 @@ struct StageDataProp : ISerializable {
     bool isPixel = false;
     bool flipX = false;
     bool flipY = false;
-    EitherFloatOrFloats scale = 1.0f;
+    float scaleX = 1.0f;
+    float scaleY = 1.0f;
     float alpha = 1.0f;
     float danceEvery = 0.0f;
     QVector<float> scroll = {1, 1};
@@ -68,7 +67,7 @@ struct StageDataCharacters : ISerializable{
     QString toString() const override;
     QString oneToString(const QString& id) const override
     {
-        toString();
+        return toString();
     }
 };
 
@@ -76,10 +75,13 @@ struct StageDataCharacters : ISerializable{
 struct StageData : ISerializable{
     QString version;
     QString name = "Unknown";
-    QVector<StageDataProp> props;
+    QVector<StagePropData> props;
     StageDataCharacters characters;
     std::optional<float> cameraZoom = 1.0f;
     std::optional<QString> directory = "shared";
+
+    // 为了兼容PE而新增的字段
+    float cameraSpeed = 1.0f;
 
     void from_json(const json& j);
 
@@ -95,5 +97,6 @@ struct StageData : ISerializable{
  */
 namespace StageDataParser
 {
-    std::unique_ptr<StageData> parseStageData(const json& j, const QString& filepath = "");
+    std::unique_ptr<StageData> parseStageData_VS(const json& j, const QString& filepath = "");
+    std::unique_ptr<StageData> parseStageData_PE(const json& j, const QString& filename = "");
 }

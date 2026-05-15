@@ -14,16 +14,12 @@ class ObjectRegistry {
 class GameLoopRegistry : public QObject {
     Q_OBJECT
 public:
-    explicit GameLoop(QObject *parent = nullptr) : QObject(parent) {}
+    explicit GameLoopRegistry(QObject *parent = nullptr) : QObject(parent) {}
 
     // 默认锁200帧
     static inline int TARGET_FPS = 200;
     // 加入到这个数组里面，才能自动调用Hook方法。
     static inline QVector<FNFObject*> callbacks;
-
-    GameLoop(){
-
-    }
 
     void registerClass(){
 

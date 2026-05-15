@@ -5,6 +5,7 @@
 #pragma once
 #include <qdatetime.h>
 #include <QDebug>
+#include <QMessageBox>
 
 enum class ErrType
 {
@@ -60,18 +61,31 @@ public:
         qInfo() << i;
     }
 
-    static void logWarning(const QString& msg, const QString& fromWhere)
+    static void logWarning(bool showDialog,const QString& msg, const QString& fromWhere)
     {
         QString w = "[" + fromWhere + "] " + "警告: " + msg;
         addMessage(ErrType::Warning, w);
         qWarning() << w;
+
+        // 调试模式下，一定弹出，这是给我看的。发布模式，特定情况才会给用户看
+        #ifdef QT_DEBUG
+        #else
+        if (showDialog)
+        #endif
+            //QMessageBox::warning(nullptr,"警告",w,QMessageBox::Ok);
     }
 
-    static void logError(const QString& msg, const QString& fromWhere)
+    static void logError(bool showDialog,const QString& msg, const QString& fromWhere)
     {
         QString e = "[" + fromWhere + "] " + "错误: " + msg;
         addMessage(ErrType::Error, e);
         qCritical() << e;
+        // 调试模式下，一定弹出，这是给我看的。发布模式，特定情况才会给用户看
+        #ifdef QT_DEBUG
+        #else
+        if (showDialog)
+        #endif
+        //QMessageBox::critical(nullptr,"错误",e,QMessageBox::Ok);
     }
 };
 
@@ -85,19 +99,19 @@ public:
     Q_INVOKABLE void logInfo(const QString& msg, const QString& fromWhere)
     {
         QString res = "[ QML: " + fromWhere + " ] ";
-        MessageHandler::logInfo(res, msg);
+        MessageHandler::logInfo(msg, res);
     }
 
     Q_INVOKABLE void logWarning(const QString& msg, const QString& fromWhere)
     {
         QString res = "[ QML: " + fromWhere + " ] ";
-        MessageHandler::logWarning(res, msg);
+        MessageHandler::logWarning(false,msg, res);
     }
 
     Q_INVOKABLE void logError(const QString& msg, const QString& fromWhere)
     {
         QString res = "[ QML: " + fromWhere + " ] ";
-        MessageHandler::logError(res, msg);
+        MessageHandler::logError(false,msg, res);
     }
 
     // TODO: 获取所有的经过MessageHandler处理的信息，方便显示到屏幕上（尚未实现）
@@ -107,6 +121,7 @@ public:
 };
 
 #define LOG_INFO(msg)    MessageHandler::logInfo(msg, Q_FUNC_INFO)
-#define LOG_WARNING(msg) MessageHandler::logWarning(msg, Q_FUNC_INFO)
-#define LOG_ERROR(msg)   MessageHandler::logError(msg, Q_FUNC_INFO)
+#define LOG_WARNING(showDialog,msg) MessageHandler::logWarning(showDialog,msg, Q_FUNC_INFO)
+#define LOG_ERROR(showDialog,msg)   MessageHandler::logError(showDialog,msg, Q_FUNC_INFO)
 #define LOG_PARSE_JSON_SUCCESS(whichType,filename) MessageHandler::logInfo(QString("成功解析了") + whichType + "，文件: " + filename, Q_FUNC_INFO)
+#define LOG_NO_SUCH_FILE_ERROR(filepath) MessageHandler::logWarning(false,QString("没有这样的文件: ") + filepath, Q_FUNC_INFO);

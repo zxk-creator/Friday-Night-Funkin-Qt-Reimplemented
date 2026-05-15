@@ -13,7 +13,7 @@ void ModRegistry::scanAllModMetadatas()
     entries.clear();
     modMetadatas.clear();
     // 获得模组的目录！
-    QVector<QString> modsPaths = Path::getAllModFolderPaths();
+    QVector<QString> modsPaths = Path::getModSubFolderPaths();
     optional<ModMetadata> modMetadata;
     // 循环获取mod里面的元数据内容！
     int loopTimes = 0;
@@ -23,8 +23,8 @@ void ModRegistry::scanAllModMetadatas()
         qInfo() << loopTimes;
         // 自动把数据加到registry里面，无需我们手动添加
         switch(ModScanUtils::judgeModEngine(modPath)){
-        case ModEngineType::PE: ModScanUtils::scanPEModMetadata(modPath,this); break;
-        case ModEngineType::VS: ModScanUtils::scanVSModMetadata(modPath,this); break;
+        case ModEngineType::PE: ModScanUtils::scanPEModMetadata(modPath); break;
+        case ModEngineType::VS: ModScanUtils::scanVSModMetadata(modPath); break;
         default: break;
         }
     }

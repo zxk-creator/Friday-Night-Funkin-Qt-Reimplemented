@@ -27,15 +27,15 @@ enum class SongTimeFormat {
  * 用于定义歌曲中 BPM 变化点 以及对应的 拍号信息。
  */
 struct SongTimeChange : ISerializable {
-    double timeStamp = 0.0;
-    double beatTime = 0.0;
-    double bpm = 100.0;
+    float timeStamp = 0.0;
+    float beatTime = 0.0;
+    float bpm = 100.0;
     int timeSignatureNum = 4;
     int timeSignatureDen = 4;
     QVector<int> beatTuplets = {4, 4, 4, 4};
 
     SongTimeChange() = default;
-    SongTimeChange(double t, double bpm) : timeStamp(t), bpm(bpm) {}
+    SongTimeChange(float t, float bpm) : timeStamp(t), bpm(bpm) {}
 
     QString toString() const override
     {
@@ -61,9 +61,9 @@ struct SongTimeChange : ISerializable {
 
     // nlohmann 自动转换
     void from_json(const json& j) {
-        if (j.contains("t")) timeStamp = j["t"].get<double>();
-        if (j.contains("b")) beatTime = j["b"].get<double>();
-        if (j.contains("bpm")) bpm = j["bpm"].get<double>();
+        if (j.contains("t")) timeStamp = j["t"].get<float>();
+        if (j.contains("b")) beatTime = j["b"].get<float>();
+        if (j.contains("bpm")) bpm = j["bpm"].get<float>();
         if (j.contains("n")) timeSignatureNum = j["n"].get<int>();
         if (j.contains("d")) timeSignatureDen = j["d"].get<int>();
         if (j.contains("bt")) {
@@ -77,18 +77,22 @@ struct SongTimeChange : ISerializable {
  * 用于微调音频与谱面的同步，解决由于音频编码延迟、剪辑问题或硬件差异导致的音画不同步。
  */
 struct SongOffsets : ISerializable {
-    double instrumental = 0.0;
-    QHash<QString, double> altInstrumentals;
-    QHash<QString, double> vocals;
-    QHash<QString, QHash<QString, double>> altVocals;
+    float instrumental = 0.0;
 
-    double getInstrumentalOffset(const QString& instrumentalId = "") const {
+    /**
+     * String: 角色id或变体id。
+     */
+    QHash<QString, float> altInstrumentals;
+    QHash<QString, float> vocals;
+    QHash<QString, QHash<QString, float>> altVocals;
+
+    float getInstrumentalOffset(const QString& instrumentalId = "") const {
         if (instrumentalId.isEmpty()) return instrumental;
         auto it = altInstrumentals.find(instrumentalId);
         return (it != altInstrumentals.end()) ? it.value() : instrumental;
     }
 
-    double getVocalOffset(const QString& charId, const QString& instrumentalId = "") const {
+    float getVocalOffset(const QString& charId, const QString& instrumentalId = "") const {
         if (!instrumentalId.isEmpty()) {
             auto itInst = altVocals.find(instrumentalId);
             if (itInst != altVocals.end()) {
@@ -139,22 +143,22 @@ struct SongOffsets : ISerializable {
 
     // nlohmann 自动转换
     void from_json(const json& j) {
-        if (j.contains("instrumental")) instrumental = j["instrumental"].get<double>();
+        if (j.contains("instrumental")) instrumental = j["instrumental"].get<float>();
         if (j.contains("altInstrumentals")) {
             for (auto& [key, val] : j["altInstrumentals"].items()) {
-                altInstrumentals[QString::fromStdString(key)] = val.get<double>();
+                altInstrumentals[QString::fromStdString(key)] = val.get<float>();
             }
         }
         if (j.contains("vocals")) {
             for (auto& [key, val] : j["vocals"].items()) {
-                vocals[QString::fromStdString(key)] = val.get<double>();
+                vocals[QString::fromStdString(key)] = val.get<float>();
             }
         }
         if (j.contains("altVocals")) {
             for (auto& [key, val] : j["altVocals"].items()) {
                 QString instKey = QString::fromStdString(key);
                 for (auto& [charKey, charVal] : val.items()) {
-                    altVocals[instKey][QString::fromStdString(charKey)] = charVal.get<double>();
+                    altVocals[instKey][QString::fromStdString(charKey)] = charVal.get<float>();
                 }
             }
         }
@@ -189,21 +193,21 @@ struct SongCharacterData : ISerializable {
         res += "伴奏: " + instrumental + "\n";
 
         res += "替代伴奏: ";
-        for (size_t i = 0; i < altInstrumentals.size(); ++i) {
+        for (int i = 0; i < altInstrumentals.size(); ++i) {
             res += altInstrumentals[i];
             if (i < altInstrumentals.size() - 1) res += ", ";
         }
         res += "\n";
 
         res += "玩家音效: ";
-        for (size_t i = 0; i < playerVocals.size(); ++i) {
+        for (int i = 0; i < playerVocals.size(); ++i) {
             res += playerVocals[i];
             if (i < playerVocals.size() - 1) res += ", ";
         }
         res += "\n";
 
         res += "对手音效: ";
-        for (size_t i = 0; i < opponentVocals.size(); ++i) {
+        for (int i = 0; i < opponentVocals.size(); ++i) {
             res += opponentVocals[i];
             if (i < opponentVocals.size() - 1) res += ", ";
         }
@@ -267,7 +271,7 @@ struct SongCharacterData : ISerializable {
         "bf"
       ]
     }
- * 就叫playData，包含了难度数据（只有字符串）
+ * 就叫playData，包含了难度数据（只有字符串），歌曲角色等
  */
 struct SongPlayData : ISerializable {
     // 传说中的变体，-erect，-pico等
@@ -288,7 +292,7 @@ struct SongPlayData : ISerializable {
 
         if (!difficulties.isEmpty()) {
             res += "可用难度: ";
-            for (size_t i = 0; i < difficulties.size(); ++i) {
+            for (int i = 0; i < difficulties.size(); ++i) {
                 res += difficulties[i];
                 if (i < difficulties.size() - 1) res += " ";
             }
@@ -297,7 +301,7 @@ struct SongPlayData : ISerializable {
 
         if (!songVariations.isEmpty()) {
             res += "变体: ";
-            for (size_t i = 0; i < songVariations.size(); ++i) {
+            for (int i = 0; i < songVariations.size(); ++i) {
                 res += songVariations[i];
                 if (i < songVariations.size() - 1) res += " ";
             }
@@ -571,17 +575,17 @@ struct NoteParamData : ISerializable {
  */
 struct SongNoteData {
     // 不让他可打印吧，直接打印数字
-    double time = 0.0;
+    float time = 0.0;
     int data = 0;
-    double length = 0.0;
+    float length = 0.0;
     std::optional<QString> kind;
     QVector<NoteParamData> params;
 
     // nlohmann 自动转换
     void from_json(const json& j) {
-        if (j.contains("t")) time = j["t"].get<double>();
+        if (j.contains("t")) time = j["t"].get<float>();
         if (j.contains("d")) data = j["d"].get<int>();
-        if (j.contains("l")) length = j["l"].get<double>();
+        if (j.contains("l")) length = j["l"].get<float>();
         if (j.contains("k")) kind = QString::fromStdString(j["k"].get<std::string>());
         if (j.contains("p") && j["p"].is_array()) {
             params.clear();
@@ -608,13 +612,13 @@ struct SongNoteData {
  * 全局唯一，整个铺面都用这一个事件，不区分难度。
  */
 struct SongEventData {
-    double time = 0.0;
+    float time = 0.0;
     QString eventKind;
     json value;
 
     // nlohmann 自动转换
     void from_json(const json& j) {
-        if (j.contains("t")) time = j["t"].get<double>();
+        if (j.contains("t")) time = j["t"].get<float>();
         if (j.contains("e")) eventKind = QString::fromStdString(j["e"].get<std::string>());
         if (j.contains("v")) value = j["v"];
     }
@@ -697,8 +701,8 @@ struct SongChartData : ISerializable {
     // 展现整个铺面内容
     QString toString() const override
     {
-        // 我不信您能写21亿个事件
         QString division = "========== 铺面信息 ==========\n";
+        // 我不信您能写21亿个事件
         int eventCount = events.size();
         QString _scrollSpeeds = "箭头滚动速度: \n";
         for (auto it = scrollSpeed.constBegin(); it != scrollSpeed.constEnd(); ++it)
@@ -723,12 +727,42 @@ struct SongChartData : ISerializable {
 /**
  * SongDataParser - 负责解析和版本迁移
  * 解析逻辑全部移动到 .cpp 文件中
+ * 目前还没有看到和版本号有关的迁移内容，因此我推断他应该没有太大的变动，因此不提供迁移逻辑
  */
 class SongDataParser {
 public:
     // 外部只需要调用这个就可以直接解析！（返回值是optional的都自带记录错误，因此你无需再log异常）
-    static std::optional<SongMetaData> parseSongMetaData(const json& j, const QString& filename = "");
+    static std::optional<SongMetaData> parseSongMetaData_VS(const json& j, const QString& filename = "");
 
-    // 目前还没有看到和版本号有关的迁移内容，因此我推断他应该没有太大的变动，因此不提供迁移逻辑
-    static SongChartData parseSongChartData(const json& j, const QString& filename = "");
+    /**
+     * 解析PE的元数据，您应该每首歌仅调用一次这个函数获得正确的metadata。不应该反复调用。
+     * @param difficulties 根据铺面文件，所有的难度字符串
+     * @param j 歌曲json内容（PE的铺面和元数据在一起）
+     * @param filename 调试用：文件名
+     * @param difficulty 由于难度与文件名绑定，需要手动传入难度数据。格式{easy,normal,hard,custom}
+     * @return 官方引擎元数据格式
+     */
+    static SongMetaData parseSongMetaData_PE(const QVector<QString>& difficulties,const json& j,const QString& filename = "");
+
+    static SongChartData parseSongChartData_VS(const json& j, const QString& filename = "");
+
+    /**
+     * 解析PE的铺面
+     * @param j 歌曲json内容（PE的铺面和元数据在一起）
+     * @param jEvents 单独的events.json文件内容
+     * @param filename 调试用：文件名
+     * @param difficulty 由于PE的难度是写在文件名里面的，而VS的难度是写在铺面里面的，所以解析PE时需手动传入难度。
+     * @return 官方引擎格式铺面
+     */
+    static SongChartData parseSongChartData_PE(const QString& difficulty,const json& j,const QString& filename = "");
+
+    /**
+     * 解析PE单独的events.json 文件
+     * @param j 内容
+     * @param filename 文件名
+     * @return QVector<SongEventData>事件列表
+     */
+    static QVector<SongEventData> parseEvents_PE(const json& j,const QString& filename = "");
+
+    static SongChartData mergeChartData_PE(const QVector<SongChartData>& chartDatas,const QVector<SongEventData>& eventDatas);
 };

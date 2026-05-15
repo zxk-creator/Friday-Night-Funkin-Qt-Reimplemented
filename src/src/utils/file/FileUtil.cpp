@@ -4,6 +4,7 @@
 
 #include "utils/file/FileUtil.h"
 #include "utils/exception/CustomException.h"
+#include "utils/message/MessageHandler.h"
 
 using namespace std;
 
@@ -86,6 +87,31 @@ QString FileUtil::stripMetadataSuffix(const QString& containStr)
     return res;
 }
 
+
+QString FileUtil::getDifficultyStrFromFileName(const QString& fileNameOrPath)
+{
+    if (fileNameOrPath.isEmpty())
+    {
+        LOG_WARNING(false,"传入了空的fileNameOrPath!");
+        return "";
+    }
+    QString filename = fetchIdFromFileName(fileNameOrPath);
+
+    QStringList charses = filename.split("-");
+    if (charses.isEmpty())
+    {
+        LOG_WARNING(false,"这是一个没有名字的歌或铺面，已跳过");
+        return "";
+    }
+    if (charses.size() == 1)
+    {
+        LOG_WARNING(false,"这个铺面没有难度数据！你应该解析那个没有难度后缀版本的铺面。");
+        return "undefined";
+    }
+
+    return charses.last();
+}
+
 QString FileUtil::getDefaultSongMetaFilePath(const QString& songPath)
 {
     QChar separator = QDir::separator();
@@ -130,7 +156,7 @@ QString FileUtil::getSongFullPath(const QString& modAbsolutePath, bool isInst,
         return "";
     }
 
-    QString songAbsolutePath = Path::getVSSongFilePath(modAbsolutePath, songId);
+    QString songAbsolutePath = PathVS::getVSSongFilePath(modAbsolutePath, songId);
 
     QString fileName;
     if (isInst) {
@@ -139,7 +165,7 @@ QString FileUtil::getSongFullPath(const QString& modAbsolutePath, bool isInst,
         fileName = variationId.isEmpty() ? "Voices-" + playerId + ".ogg" : "Voices-" + playerId + "-" + variationId + ".ogg";
     }
 
-    QString oggPath = songAbsolutePath + QDir::separator() + fileName;
+    QString oggPath = QDir::cleanPath(songAbsolutePath + QDir::separator() + fileName);
     if (QFile::exists(oggPath))
         return oggPath;
 
@@ -153,6 +179,16 @@ QString FileUtil::getSongFullPath(const QString& modAbsolutePath, bool isInst,
 
 QString FileUtil::fetchIdFromFileName(const QString& fileNameOrPath)
 {
-    QFileInfo fileInfo(fileNameOrPath);
-    return fileInfo.completeBaseName();
+    QString cleanPath = fileNameOrPath;
+    while (cleanPath.endsWith('/') || cleanPath.endsWith('\\')) {
+        cleanPath.chop(1);
+    }
+
+    QFileInfo info(cleanPath);
+
+    if (info.isDir()) {
+        return info.fileName();
+    } else {
+        return info.completeBaseName();
+    }
 }

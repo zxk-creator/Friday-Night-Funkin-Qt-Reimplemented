@@ -6,15 +6,31 @@ import "../../../../fonts"
 Item {
     id: assetPreview
 
+    property string modDetailInfo: ""
+
+    Component.onCompleted: {
+        modDetailInfo = ModRegistry.getCacheContent();
+    }
+
+    // 模组解析完成后，在这里接收信号
+    Connections {
+        target: ModRegistry
+        // 这是QML硬性规定，与signal函数，前面必须价格on，后面首字母大写
+        function onModParsed(){
+            log.logInfo("收到模组解析完成信号","modParsed");
+            modDetailInfo = ModRegistry.getCacheContent();
+        }
+    }
+
     Rectangle {
         anchors.fill: parent
-        anchors.margins: gameCanvas.dp(40) // 与边缘保持间隙
+        anchors.margins: gameCanvas.dp(40)
         color: "#AA000000"
         radius: 15
         border.color: "#33FFFFFF"
         border.width: 1
 
-        // 2. 左上角标题
+        // 左上角标题
         Mainfont {
             id: titleText
             text: "总览"
@@ -25,7 +41,7 @@ Item {
             anchors.margins: gameCanvas.dp(25)
         }
 
-        // 3. 文本内容区（带滚动条）
+        // 文本内容区
         ScrollView {
             id: contentScroll
             anchors.top: titleText.bottom
@@ -35,20 +51,13 @@ Item {
             anchors.margins: gameCanvas.dp(25)
             clip: true
 
-            Text {
+            Mainfont {
                 width: contentScroll.width
-                text: root.modAbsolutePath
+                text: modDetailInfo
                 color: "white"
                 font.family: "Microsoft YaHei"
                 font.pixelSize: gameCanvas.dp(22)
-                textFormat: Text.StyledText
-
-                // 自动换行
-                wrapMode: Text.WordWrap
-
-                // 文字排版微调
-                lineHeight: 1.2
-                horizontalAlignment: Text.AlignLeft
+                textFormat: Text.PlainText
             }
         }
     }

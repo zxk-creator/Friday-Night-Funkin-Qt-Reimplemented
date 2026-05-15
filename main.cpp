@@ -22,7 +22,10 @@ inline void init(QQmlApplicationEngine &engine)
 
     engine.rootContext()->setContextProperty("SoundSystem",Context::soundSystem);
     engine.rootContext()->setContextProperty("ModRegistry",Context::modRegistry);
+    // 扫描模组
+    Context::modRegistry->scanAllModMetadatas();
     engine.rootContext()->setContextProperty("PathUtil",Context::pathUtil);
+    engine.rootContext()->setContextProperty("log",Context::logProxy);
     // 以后注册点别的
 }
 
@@ -46,7 +49,7 @@ void requestAndroidPermission()
  */
 int main(int argc, char *argv[])
 {
-    // 看看ASan内存分析工具是否正常工作
+    // 去掉注释测试ASan内存分析工具是否正常工作
     /*
     int* p = nullptr;
     *p = 42;
@@ -57,6 +60,12 @@ int main(int argc, char *argv[])
     QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
 #endif
 
+#ifdef QT_DEBUG
+    LOG_INFO("您正处于调试模式下！");
+#else
+    LOG_INFO("您正处于发布模式下，版本" + Common::CURRENT_ENGINE_VERSION);
+#endif
+
     // 窗口图标
     QGuiApplication app(argc, argv);
     app.setWindowIcon(QIcon(":/qt/qml/fnf/BF.ico"));
@@ -65,8 +74,6 @@ int main(int argc, char *argv[])
     requestAndroidPermission();
     Path::copyAssets();
     #endif
-
-    QObject::connect();
 
     // 加载qml
     QQmlApplicationEngine engine;
@@ -80,9 +87,8 @@ int main(int argc, char *argv[])
     InterestingThings::damn(false);
 
     // 测试：放首歌听听
-    auto test = new FunkinSound(false,Path::file("preload/music/freakyMenu/freakyMenu","MUSIC",""),ESoundType::uiSound,true,"freakyMenu");
+    auto test = new FunkinSound(false,PathVS::file("preload/music/freakyMenu/freakyMenu","MUSIC","").value(),ESoundType::uiSound,true,"freakyMenu");
     test->playSound();
 
-    // 事件循环，防止执行到这窗口就没了
     return app.exec();
 }

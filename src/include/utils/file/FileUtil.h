@@ -47,6 +47,8 @@ namespace FileUtil
     // 去掉metadata后缀以获取歌曲id
     QString stripMetadataSuffix(const QString& containStr);
 
+    QString getDifficultyStrFromFileName(const QString& fileNameOrPath);
+
     /**
      * 构造默认变体元数据的绝对路径
      * @param songPath 包含metadata的绝对路径
@@ -106,13 +108,26 @@ namespace FileUtil
      * 从路径或者直接文件名中获取id
      * eg: - "bf-candy.json" → "bf-candy"
      *     - "home/kkplay/mod/files/bf-candy.json" → "bf-candy"
+     *     - "home/kkplay/mod/files/songs/wife-forever" → "wife-forever"（这里是文件夹！）
      * @param fileNameOrPath 文件名或路径名
      * @return id
      */
     QString fetchIdFromFileName(const QString& fileNameOrPath);
 
+    /**
+     * 转换文件名全部为小写或大写（Linux系统上大小写不同的文件是不同文件）
+     * @param toLower 是否转换成小写（反之转换成大写）
+     * @param fileName 文件名（只能是文件名，传入路径名在linux上很容易出问题。）
+     * @return 转换后的名字
+     */
+    inline QString toLowerOrToUpper(bool toLower,const QString& fileName)
+    {
+        if (toLower) return fileName.toLower();
+        return fileName.toUpper();
+    }
+
     // 通过当前时间生成UUID（肯定不会重复，除非米哈游有100亿以上的玩家，而且你装了一万个PE模组）
-    QString genUID()
+    inline QString genUID()
     {
         static std::atomic<uint64_t> counter{0};
         uint64_t seq = counter.fetch_add(1, std::memory_order_relaxed);
