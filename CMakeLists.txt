@@ -31,18 +31,13 @@ set(PROJECT_SOURCES
         src/src/utils/Path.cpp
         src/include/data/mod/ModMetadata.h
         src/include/modding/ModListModel.h
-        src/include/utils/modding/ModScanUtils.h
-        src/src/utils/modding/ModScanUtils.cpp
         src/include/utils/lang/LangStringPool.h
-        src/src/utils/modding/GlobalSystemUtils.cpp
-        src/src/modding/modmetadata/ModMetadata.cpp
+        src/src/utils/GlobalSystemUtils.cpp
+        src/src/data/mod/ModMetadata.cpp
         src/include/permissions/GetAndroidStoragePermission.h
-        src/include/data/BaseRegistry.h
         src/include/modding/modmetadata/VersonRule.h
         src/thirdParty/semver/semver.h
         src/include/utils/VersionUtil.h
-        src/include/data/IRegistrableEntry.h
-        src/include/data/level/LevelRegistry.h
         src/include/data/level/LevelData.h
         src/include/modding/ModEngineType.h
         src/include/data/animation/AnimationData.h
@@ -51,7 +46,6 @@ set(PROJECT_SOURCES
         src/src/utils/exception/CustomException.cpp
         src/src/data/level/LevelData.cpp
         src/include/utils/file/FileUtil.h
-        src/include/data/song/SongRegistry.h
         src/include/play/song/Song.h
         src/include/data/song/SongData.h
         src/include/Constants.h
@@ -65,19 +59,40 @@ set(PROJECT_SOURCES
         src/include/data/character/CharacterData.h
         src/src/data/character/CharacterData.cpp
         src/src/utils/file/FileUtil.cpp
-        src/include/data/character/CharacterRegistry.h
         src/include/data/notestyle/NoteStyleData.h
         src/src/data/notestyle/NoteStyleData.cpp
         src/include/data/mod/ModRegistry.h
         src/src/data/mod/ModRegistry.cpp
         src/src/modding/ModListModel.cpp
         src/include/data/Context.h
-        src/include/play/game/GameLoop.h
-        src/include/play/game/FNFObject.h
+        # new scanner system
+        src/include/scanner/ModScanner.h
+        src/src/scanner/ModScanner.cpp
+        src/include/scanner/VSScanner.h
+        src/src/scanner/VSScanner.cpp
+        src/include/scanner/PEScanner.h
+        src/src/scanner/PEScanner.cpp
+        src/include/data/registry/RegistryHub.h
+        # PE data types
+        src/include/data/pe/PECharacterData.h
+        src/src/data/pe/PECharacterData.cpp
+        src/include/data/pe/PESongData.h
+        src/src/data/pe/PESongData.cpp
+        src/include/data/pe/PEStageData.h
+        src/src/data/pe/PEStageData.cpp
+        src/include/play/game/FlxObject.h
         src/include/data/animation/TextureAtlas.h
         src/src/data/stage/StageData.cpp
-        src/include/data/stage/StageRegistry.h
-        src/include/data/notestyle/NoteStyleRegistry.h
+        src/include/data/animation/FlxAnimatedData.h
+        src/include/play/game/FlxSprite.h
+        src/include/play/game/FlxText.h
+        src/include/play/game/FlxCamera.h
+        src/include/play/game/FlxState.h
+        src/src/play/game/FlxSprite.cpp
+        src/include/play/GameWindow.h
+        src/src/play/GameWindow.cpp
+        src/include/play/states/MenuState.h
+        src/include/play/game/FlxG.h
 )
 
 set(CMAKE_AUTORCC ON)
@@ -179,9 +194,12 @@ if(QT_VERSION VERSION_GREATER_EQUAL 6.2)
             QML/views/modding/detailview/BottomBar.qml
             QML/views/modding/detailview/ModDetailView.qml
             QML/views/modding/detailview/sectionLoader/AssetPreview.qml
+            QML/views/modding/detailview/sectionLoader/CharacterView.qml
+            QML/custom/inputbox/FNFInputField.qml
             QML/buttons/DefaultButton.qml
             QML/views/modding/EmptyModView.qml
             QML/views/info/ViceCityInfo.qml
+            QML/views/title/TitleView.qml
     )
 endif()
 

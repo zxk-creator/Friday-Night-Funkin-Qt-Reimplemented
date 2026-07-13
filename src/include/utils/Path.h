@@ -23,7 +23,7 @@ enum class EDataResourceType
 	ui
 };
 
-enum class AssetType {
+enum class EAssetType {
 	TEXT,
 	SOUND,
 	MUSIC,

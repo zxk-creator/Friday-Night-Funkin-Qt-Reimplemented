@@ -19,12 +19,17 @@ using json = nlohmann::json;
 
 // 决定使用哪种图集系统来加载和播放角色的动画。
 enum class CharacterRenderType {
+    // 一张大图，里面包含了所有帧
     Sparrow,
-    // PE常用，历史遗留版图集格式（我不想背历史包袱！）
+    // PE常用，历史遗留版图集格式，一张PNG一张TXT
     Packer,
+    // 多张sparrow合并
     MultiSparrow,
+    // 新版png + json骨骼动画
     AnimateAtlas,
+    // AnimatieAtlas多张
     MultiAnimateAtlas,
+    // 脚本自定义
     Custom
 };
 
@@ -58,7 +63,7 @@ struct HealthIconData : ISerializable
         return res;
     }
 
-    QString oneToString(const QString& id) const override
+    QString oneToString(const QString& ids) const override
     {
         return toString();
     }
@@ -200,7 +205,8 @@ private:
     }
 };
 
-// 可能为空，记得一定要检查再使用，否则崩溃！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！
+// PECharacterData 的完整实现在 data/pe/PECharacterData.h
+
 namespace CharacterDataParser
 {
     std::unique_ptr<CharacterData> parseCharacterData_VS(const json& j, const QString& filepath);

@@ -37,7 +37,7 @@ struct LevelData : ISerializable {
     std::vector<LevelPropData> props;
     // 也许这是隐藏曲？
     bool visible = true;
-    // 关键字段：需要用这里面的内容在SongRegistry进行字符串查找从而获得指定Song对象进行播放！
+    // 关键字段：用这里面的 song id 在 RegistryHub::vsSongs 中查找即可获得 Song 对象
     std::vector<QString> songs = {"bopeebo"};
     QString background = "#F9CF51";
 

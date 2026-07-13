@@ -382,3 +382,6 @@ out/
 .cxx/
 
 !.*
+
+.claude/
+.qtcreator/

@@ -14,6 +14,16 @@
 namespace FileUtil
 {
     /**
+     * 检查文件路径是否存在（文件或目录均可）
+     * @param fileAbsolutePath 绝对路径
+     * @return 存在返回 true，否则 false
+     */
+    inline bool exists(const QString& fileAbsolutePath)
+    {
+        return QFileInfo::exists(fileAbsolutePath);
+    }
+
+    /**
      * 一个函数打开文件
      * @param fileAbsolutePath 文件绝对路径，一定要是文件路径！
      * @return 转换后的字符串
@@ -142,3 +152,17 @@ namespace FileUtil
             .arg(seq % 10000, 4, 10, QChar('0'));
     }
 }
+
+class File : public QObject
+{
+    Q_OBJECT
+
+public:
+
+    explicit File(QObject* parent = nullptr) : QObject(parent) {}
+
+    Q_INVOKABLE QString readFileToString(const QString& fileAbsolutePath)
+    {
+        return FileUtil::ReadFileToString(fileAbsolutePath);
+    }
+};

@@ -45,6 +45,7 @@ Item {
             id: ma
             anchors.fill: parent
             hoverEnabled: true
+            z: 5
             onClicked: {
                 SoundSystem.playconfirmSound()
                 if (showPressMsg)

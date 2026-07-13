@@ -5,6 +5,7 @@
 
 #include "audio/FunkinSoundSystem.h"
 #include "data/Context.h"
+#include "QImageReader"
 #include "data/mod/ModRegistry.h"
 #include "utils/interseting/InterestingThings.h"
 #include "utils/Path.h"
@@ -14,7 +15,7 @@
 #endif
 
 // 暴露C++函数给QML调用
-inline void init(QQmlApplicationEngine &engine)
+inline void init(QQmlEngine &engine)
 {
     // 初始化存储单例的中心
     auto context = new Context();
@@ -26,6 +27,7 @@ inline void init(QQmlApplicationEngine &engine)
     Context::modRegistry->scanAllModMetadatas();
     engine.rootContext()->setContextProperty("PathUtil",Context::pathUtil);
     engine.rootContext()->setContextProperty("log",Context::logProxy);
+    engine.rootContext()->setContextProperty("File",Context::fileutil);
     // 以后注册点别的
 }
 
@@ -39,14 +41,6 @@ void requestAndroidPermission()
 #endif
 
 
-/**
- * 我一直在想，注释到底用英文写还是中文写？
- * 毕竟国内FNF热度一般，又有多少人会关注我这个项目
- * 国外也一般半
- * 算了
- * 自娱自乐
- * 注释还是Chinese+
- */
 int main(int argc, char *argv[])
 {
     // 去掉注释测试ASan内存分析工具是否正常工作
@@ -70,25 +64,34 @@ int main(int argc, char *argv[])
     QGuiApplication app(argc, argv);
     app.setWindowIcon(QIcon(":/qt/qml/fnf/BF.ico"));
 
+    auto gameWindow = new GameWindow();
+    Context::gameWindow = gameWindow;
+
     #ifdef Q_OS_ANDROID
     requestAndroidPermission();
     Path::copyAssets();
     #endif
 
-    // 加载qml
-    QQmlApplicationEngine engine;
-    init(engine);
-    // 有严格顺序，init必须放在前面！
-    engine.load(QUrl(QStringLiteral("qrc:/qt/qml/fnf/QML/main.qml")));
+    QImageReader::setAllocationLimit(512);
 
-    if (engine.rootObjects().isEmpty())
-        return -1;
+    // 用 GameWindow(QQuickView) 加载 QML
+    gameWindow->setTitle("Mod Loader for - Friday Night Funkin'");
+    gameWindow->setMinimumSize(QSize(800, 450));
+    gameWindow->setResizeMode(QQuickView::SizeRootObjectToView);
+    QColor color;
+    gameWindow->setColor(color.black());
+
+    // 先设置 context 属性，再加载 QML
+    init(*gameWindow->engine());
+    gameWindow->setSource(QUrl("qrc:/qt/qml/fnf/QML/main.qml"));
 
     InterestingThings::damn(false);
 
     // 测试：放首歌听听
-    auto test = new FunkinSound(false,PathVS::file("preload/music/freakyMenu/freakyMenu","MUSIC","").value(),ESoundType::uiSound,true,"freakyMenu");
+    auto test = new FunkinSound(false,PathVS::file("music/freakyMenu/freakyMenu","MUSIC","").value(),ESoundType::uiSound,true,"freakyMenu");
     test->playSound();
+
+    gameWindow->show();
 
     return app.exec();
 }

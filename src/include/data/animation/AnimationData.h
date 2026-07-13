@@ -116,3 +116,6 @@ struct AnimationData : UnnamedAnimationData{
         return toString();
     }
 };
+
+// ===========================
+// PE动画数据的完整实现在 data/pe/PECharacterData.h

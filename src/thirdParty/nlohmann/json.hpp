@@ -18093,7 +18093,7 @@ inline cached_power get_cached_power_for_binary_exponent(int e)
     // k in this range. For each such k it suffices to find a cached power
     // such that the exponent of the product lies in [alpha,gamma].
     // This implies that the difference of the decimal exponents of adjacent
-    // table entries must be less than or equal to
+    // table VSEntries must be less than or equal to
     //
     //      floor( (gamma - alpha) * log_10(2) ) = 8.
     //
