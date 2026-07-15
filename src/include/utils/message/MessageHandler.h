@@ -69,10 +69,13 @@ public:
 
         // 调试模式下，一定弹出，这是给我看的。发布模式，特定情况才会给用户看
         #ifdef QT_DEBUG
+            // 调试模式下：空操作
+            (void)showDialog;
         #else
-        if (showDialog)
+            if (showDialog) {
+                //QMessageBox::warning(nullptr,"警告",w,QMessageBox::Ok);
+            }
         #endif
-            //QMessageBox::warning(nullptr,"警告",w,QMessageBox::Ok);
     }
 
     static void logError(bool showDialog,const QString& msg, const QString& fromWhere)
@@ -82,10 +85,13 @@ public:
         qCritical() << e;
         // 调试模式下，一定弹出，这是给我看的。发布模式，特定情况才会给用户看
         #ifdef QT_DEBUG
+            // 调试模式下：空操作
+            (void)showDialog;
         #else
-        if (showDialog)
+            if (showDialog) {
+                //QMessageBox::critical(nullptr,"错误",e,QMessageBox::Ok);
+            }
         #endif
-        //QMessageBox::critical(nullptr,"错误",e,QMessageBox::Ok);
     }
 };
 

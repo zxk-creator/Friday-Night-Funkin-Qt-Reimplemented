@@ -6,8 +6,9 @@
 #include "audio/FunkinSoundSystem.h"
 #include "save/SaveSystem.h"
 #include "data/mod/ModRegistry.h"
-#include "data/registry/RegistryHub.h"
+#include "HaxeParser/ast/Interpreter.h"
 #include "play/GameWindow.h"
+#include "play/game/FlxG.h"
 #include "utils/Path.h"
 #include "utils/lang/LangStringPool.h"
 
@@ -27,6 +28,8 @@ public:
     static inline LangStringPool* lang;
     static inline File* fileutil;
     static inline GameWindow* gameWindow;
+    static inline Interpreter* interpreter;
+    static inline FlxG* _FlxG;
 
     Context()
     {
@@ -38,5 +41,6 @@ public:
         logProxy = new LogProxy();
         lang = new LangStringPool();
         fileutil = new File();
+        _FlxG = new FlxG();
     }
 };

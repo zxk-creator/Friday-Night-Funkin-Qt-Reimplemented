@@ -12,6 +12,6 @@ public:
     QString name;
     QString QMLFileAbsolutePath;
 
-    FlxState(QString& name,QString& QMLFileAbsolutePath) : name(name),QMLFileAbsolutePath(QMLFileAbsolutePath) {}
+    FlxState(const QString& name,const QString& QMLFileAbsolutePath) : name(name),QMLFileAbsolutePath(QMLFileAbsolutePath) {}
 };
 

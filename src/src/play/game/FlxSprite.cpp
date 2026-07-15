@@ -144,10 +144,12 @@ void FlxSprite::update(float elapsed)
     QQuickItem::update();
 }
 
-FlxSprite::FlxSprite(QQuickItem* parent) : QQuickItem(parent)
+FlxSprite::FlxSprite(QQuickItem* parent) : QQuickItem(parent), HClass("FlxSprite",nullptr)
 {
-    animation = std::make_unique<FlxAnimationController>(this);
-    Context::gameWindow->registerNewGameObjects({this});
+    animation = std::make_shared<FlxAnimationController>(this);
+    setAcceptedMouseButtons(Qt::NoButton);
+    setAcceptHoverEvents(true);
+    setFlag(ItemHasContents);
 }
 
 QSGNode* FlxSprite::updatePaintNode(QSGNode* oldNode, UpdatePaintNodeData* data)

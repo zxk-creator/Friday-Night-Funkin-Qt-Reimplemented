@@ -116,7 +116,7 @@ bool Path::copyAssets()
     // 标志: 文件是否是我拷贝过的？
     QString flagFile = privateDir + "/.assets_copied";
     if (QFile::exists(flagFile)){
-        MessageHandler::logWarning(QString("资产目录已存在！将不会被拷贝。"),QString("Path"));
+        MessageHandler::logWarning(false, QString("资产目录已存在！将不会被拷贝。"),QString("Path"));
         return false;
     }
     // 说明没有看来是，我们先清理目录
@@ -144,7 +144,7 @@ bool Path::copyAssets()
         QDir().mkpath(QFileInfo(dest).absolutePath());
 
         if (!QFile::copy(source, dest)) {
-            MessageHandler::logWarning(QString("拷贝失败，你的磁盘空间可能不足？文件:" + source),"Path");
+            MessageHandler::logWarning(false, QString("拷贝失败，你的磁盘空间可能不足？文件:" + source),"Path");
         }
     }
 

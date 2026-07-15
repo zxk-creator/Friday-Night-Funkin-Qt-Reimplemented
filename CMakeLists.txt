@@ -93,6 +93,10 @@ set(PROJECT_SOURCES
         src/src/play/GameWindow.cpp
         src/include/play/states/MenuState.h
         src/include/play/game/FlxG.h
+        src/thirdParty/HaxeParser/Init.h
+        src/thirdParty/HaxeParser/util/reflect/Reflect.cpp
+        src/thirdParty/HaxeParser/lib/ScriptLibs.cpp
+        src/include/utils/window/WindowUtil.h
 )
 
 set(CMAKE_AUTORCC ON)
@@ -199,7 +203,7 @@ if(QT_VERSION VERSION_GREATER_EQUAL 6.2)
             QML/buttons/DefaultButton.qml
             QML/views/modding/EmptyModView.qml
             QML/views/info/ViceCityInfo.qml
-            QML/views/title/TitleView.qml
+            QML/views/title/MenuState.qml
     )
 endif()
 
@@ -221,6 +225,12 @@ target_link_libraries(${PROJECT_NAME}
         Qt::Quick
         Qt6::Widgets
 )
+
+if(ANDROID)
+    # 静态 Qt for Android 下，JNI_OnLoad 在 Qt6Core 和 qtforandroid 插件中各有一份，
+    # 允许重复定义（两者是相同的实现）
+    target_link_options(${PROJECT_NAME} PRIVATE LINKER:--allow-multiple-definition)
+endif()
 
 
 target_include_directories(${PROJECT_NAME} PUBLIC src/include)

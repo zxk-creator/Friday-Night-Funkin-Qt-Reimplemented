@@ -16,14 +16,7 @@
 typedef QJniObject NativeObject;
 
 
-static JavaVM* g_vm = nullptr;
-
-JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void* reserved) {
-    g_vm = vm;
-    return JNI_VERSION_1_6;
-}
-
-void requestAllFilesAccess() {
+inline void requestAllFilesAccess() {
     // 通过 Qt 内部已有的静态方法直接获取当前 Activity
     // 注意：Qt 6 的包名路径是 org/qtproject/qt/android/QtNative
     QJniObject activity = QJniObject::callStaticObjectMethod(
@@ -43,10 +36,11 @@ void requestAllFilesAccess() {
     }
 }
 
-bool hasAllFilesPermission() {
+inline bool hasAllFilesPermission() {
     JNIEnv* env;
-    if (g_vm->GetEnv(reinterpret_cast<void**>(&env), JNI_VERSION_1_6) != JNI_OK) {
-        g_vm->AttachCurrentThread(&env, nullptr);
+    JavaVM* vm = QJniEnvironment::javaVM();
+    if (vm->GetEnv(reinterpret_cast<void**>(&env), JNI_VERSION_1_6) != JNI_OK) {
+        vm->AttachCurrentThread(&env, nullptr);
     }
 
     // 1. API 30 以下默认认为有权限

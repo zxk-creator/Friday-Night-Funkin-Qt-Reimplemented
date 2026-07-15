@@ -66,7 +66,7 @@ public:
 	static QString getModDir();
 
 	/**
-	 * 获取资产目录，跨平台适用
+	 * 获取asset所在目录，跨平台适用
 	 * @return 构造好的绝对路径
 	 */
 	static QString getAssetRoot();

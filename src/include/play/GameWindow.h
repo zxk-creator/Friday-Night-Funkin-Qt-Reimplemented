@@ -25,6 +25,14 @@ public:
         lastFrameTime = std::chrono::steady_clock::now();
     }
 
+    void init()
+    {
+        for (const auto& obj : registeredGameObjects)
+        {
+            qobject_cast<FlxObject*>(obj.data())->create();
+        }
+    }
+
     void registerNewGameObjects(const QVector<QPointer<QObject>>& gameObjects)
     {
         for (auto& ptr : gameObjects)
@@ -35,6 +43,7 @@ public:
                 continue;
             }
             registeredGameObjects.push_back(ptr);
+            qobject_cast<FlxObject*>(ptr.data())->create();
         }
     }
 private slots:

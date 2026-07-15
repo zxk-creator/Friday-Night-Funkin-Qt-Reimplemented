@@ -2,6 +2,7 @@
 #include <QQmlContext>
 #include <QGuiApplication>
 #include <audio/FunkinSound.h>
+#include <QMessageBox>
 
 #include "audio/FunkinSoundSystem.h"
 #include "data/Context.h"
@@ -9,6 +10,10 @@
 #include "data/mod/ModRegistry.h"
 #include "utils/interseting/InterestingThings.h"
 #include "utils/Path.h"
+#include "HaxeParser/ast/Interpreter.h"
+#include "play/states/MenuState.h"
+#include "HaxeParser/Init.h"
+#include "utils/window/WindowUtil.h"
 
 #ifdef Q_OS_ANDROID
 #include "permissions/GetAndroidStoragePermission.h"
@@ -40,6 +45,17 @@ void requestAndroidPermission()
 }
 #endif
 
+// 注册一些类
+void registerSomeClass()
+{
+    Context::interpreter->registerNativeClass("MenuState", {});
+}
+// 注册一些本地函数
+void registerSomeFunction(Interpreter* interpreter)
+{
+
+}
+
 
 int main(int argc, char *argv[])
 {
@@ -61,11 +77,12 @@ int main(int argc, char *argv[])
 #endif
 
     // 窗口图标
-    QGuiApplication app(argc, argv);
+    QApplication app(argc, argv);
     app.setWindowIcon(QIcon(":/qt/qml/fnf/BF.ico"));
 
     auto gameWindow = new GameWindow();
     Context::gameWindow = gameWindow;
+    gameWindow->init();
 
     #ifdef Q_OS_ANDROID
     requestAndroidPermission();
@@ -87,11 +104,50 @@ int main(int argc, char *argv[])
 
     InterestingThings::damn(false);
 
+    auto interpreter = new Interpreter();
+    Context::interpreter = interpreter;
+    registerSomeClass();
+
     // 测试：放首歌听听
     auto test = new FunkinSound(false,PathVS::file("music/freakyMenu/freakyMenu","MUSIC","").value(),ESoundType::uiSound,true,"freakyMenu");
     test->playSound();
 
     gameWindow->show();
 
-    return app.exec();
+
+
+    // ============================================ 异常处理区 ===========================================================
+    try {
+        // 开始执行脚本，脚本开始接管一切。
+        try {
+            QString mainScriptPath = Path::getAssetRoot() + "/scripts/Main.hx";
+            QString source = FileUtil::ReadFileToString(mainScriptPath);
+            HxParser::initInterpreter(source, interpreter);
+        }
+        catch (std::runtime_error& e) {
+            auto* pool = LangStringPool::instance();
+            WindowUtil::showQuickDialog(QMessageBox::Critical,
+                                        pool->scriptRuntimeError(),
+                                        pool->scriptRuntimeErrorMsg().arg(e.what()));
+        }
+    }
+    catch (...) {
+        auto* pool = LangStringPool::instance();
+        WindowUtil::showQuickDialog(QMessageBox::Critical,
+                                    pool->fatalError(),
+                                    pool->fatalStartupErrorMsg());
+        std::abort();
+    }
+
+    try {
+        return app.exec();
+    }
+    catch (std::exception& e) {
+        auto* pool = LangStringPool::instance();
+        WindowUtil::showQuickDialog(QMessageBox::Critical,
+                                    pool->fatalError(),
+                                    pool->fatalRuntimeErrorMsg());
+    }
+
+    return -1;
 }

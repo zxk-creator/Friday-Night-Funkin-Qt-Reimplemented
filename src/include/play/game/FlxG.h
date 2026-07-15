@@ -11,6 +11,7 @@
 
 class FlxG
 {
+public:
     std::unique_ptr<FlxState> currentLevel;
 
     void switchState(std::unique_ptr<FlxState> newState)

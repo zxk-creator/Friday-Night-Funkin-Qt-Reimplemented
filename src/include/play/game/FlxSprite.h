@@ -13,12 +13,13 @@
 
 #include "data/Context.h"
 #include "data/character/CharacterData.h"
+#include "HaxeParser/type/HClass.h"
 
 class FlxSprite;
 class FlxFrame;
 class FlxAnimation;
 
-using ControllerPtr = std::unique_ptr<class FlxAnimationController>;
+using ControllerPtr = std::shared_ptr<class FlxAnimationController>;
 
 struct FlxRect
 {
@@ -79,20 +80,20 @@ public:
 
 
 // 代表了场景中一个独立的精灵对象
-class FlxSprite : public QQuickItem, public FlxObject
+class FlxSprite : public QQuickItem, public FlxObject, public HClass
 {
     Q_OBJECT
     Q_INTERFACES(FlxObject)
 
     friend class FlxAnimationController;
 
+public:
     QVector<QSGTexture*> altas;
     QSGTexture* currentTex = nullptr;
     ControllerPtr animation;
     QVector<FlxAnimation> animations;
     FlxRect currentSampingPoint;
 
-public:
     FlxSprite(QQuickItem* parent = nullptr);
 
     // 相当于每帧进行的渲染
@@ -118,16 +119,51 @@ public:
      */
     QVector<FlxAnimation> parseSparrow(const QString& pngAbsolutePath);
 
+    // 外部调用这个来加载纹理图集
     void loadGraphic(QVector<QString>& imageAbsolutePaths, CharacterRenderType renderType);
 
+    void create() override
+    {
+
+    }
+
     void update(float elapsed) override;
+
+    Dynamic getField(const QString& fieldName) override
+    {
+        if (fieldName == "animation")
+        {
+            return animation.get();
+        }
+
+        return Dynamic();
+    }
+
+protected:
+    void hoverEnterEvent(QHoverEvent* event) override
+    {
+
+        QQuickItem::hoverEnterEvent(event);
+    }
+
+    void hoverMoveEvent(QHoverEvent* event) override
+    {
+
+        QQuickItem::hoverMoveEvent(event);
+    }
+
+    void hoverLeaveEvent(QHoverEvent* event) override
+    {
+
+        QQuickItem::hoverLeaveEvent(event);
+    }
 };
 
 
 
 
 // 动画控制器
-class FlxAnimationController
+class FlxAnimationController : HClass
 {
     FlxSprite* spriteOwner;
 
@@ -147,7 +183,20 @@ class FlxAnimationController
     int currentFrameIdx = 0;
 
 public:
-    explicit FlxAnimationController(FlxSprite* owner) : spriteOwner(owner) {}
+    explicit FlxAnimationController(FlxSprite* owner) : HClass("FlxAnimationController",nullptr), spriteOwner(owner)
+    {
+        registerNativeMethod("addByPrefix", FunctionType([this](const std::vector<Dynamic>& args) -> Dynamic
+        {
+            if (args.size() == 3 && args[0].isString() && args[1].isString() && args[2].isNumber() && args[3].isBool())
+            {
+                this->addByPrefix(args[0].asString(), args[1].asString(), args[2].asNumber(), args[3].asBool());
+                return Dynamic();
+            }
+
+            LOG_ERROR(false,"您传入的函数参数不正确！");
+            return Dynamic();
+        }));
+    }
 
     /**
      * 从已解析的图集中，按XML帧名前缀注册一条播放动画

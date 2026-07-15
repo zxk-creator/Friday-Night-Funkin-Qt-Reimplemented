@@ -40,4 +40,11 @@ public:
     // 解析模组相关
     QString unknownWeekName() const { return tr("未命名周目"); }
     QString unknownAuthor() const { return  tr("一个神奇的PE作者"); }
+
+    // 错误和异常相关
+    QString scriptRuntimeError() const { return tr("脚本运行时错误！"); }
+    QString scriptRuntimeErrorMsg() const { return tr("脚本执行过程中发生了无法恢复的异常: %1 。请检查脚本语法和逻辑是否正确，然后再试一次。"); }
+    QString fatalError() const { return tr("错误！"); }
+    QString fatalStartupErrorMsg() const { return tr("应用程序在启动过程中发生了无法处理的致命异常，正在退出...."); }
+    QString fatalRuntimeErrorMsg() const { return tr("应用程序在运行过程中发生了无法处理的致命异常，正在退出...."); }
 };
