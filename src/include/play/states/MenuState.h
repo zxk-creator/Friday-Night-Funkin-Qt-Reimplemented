@@ -8,12 +8,12 @@
 #include "HaxeParser/type/HClass.h"
 
 // 主菜单
-class MenuState : public FlxState, public HClass
+class MenuState : public FlxState
 {
 
     QVector<QPointer<FlxSprite>> menuOptions;
 public:
-    MenuState(const QString& name,const QString& QMLFileAbsolutePath) : FlxState(name, QMLFileAbsolutePath), HClass("MenuState",nullptr)
+    MenuState(const QString& QMLFileAbsolutePath) : FlxState("MenuState", QMLFileAbsolutePath)
     {
         registerNativeMethod("createMenuOption", FunctionType([this](const std::vector<Dynamic>& args) -> Dynamic
         {
@@ -23,8 +23,6 @@ public:
 
             return Dynamic();
         }));
-        
-        Context::_FlxG->currentLevel = std::move(this);
     }
 
     void create() override
@@ -35,6 +33,10 @@ public:
     void update(float elapsed) override
     {
 
+    }
+
+    QString getName() override {
+        return "MenuState";
     }
 
     /**

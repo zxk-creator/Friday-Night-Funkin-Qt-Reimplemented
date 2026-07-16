@@ -5,6 +5,7 @@
 #pragma once
 #include <string>
 #include <QDebug>
+#include "utils/message/MessageHandler.h"
 
 using std::string;
 
@@ -32,6 +33,10 @@ public:
     static void logVersionInvalid(const QString& versionProvided, const QString& versionNeeded, const QString& fileName);
     // 为了防止我写错逻错故意设置的自杀行为
     static void wrongParamException(const QString& msg,const QString& functionName, const int atLine);
+    // 脚本参数错误
+    static void scriptWrongParamException(const QString& functionName, const int atLine) {
+        MessageHandler::logError(true,"脚本传入的参数不正确！", "Exception");
+    }
     // 某些其他问题，必须关闭游戏
     static void killGame(const QString& why,const QString& fromWhere);
 };
@@ -44,3 +49,5 @@ public:
     Exception::logNullPointerException(msg, __FUNCTION__, __LINE__)
 
 #define LOG_WRONG_PARAM_ERROR(msg)  Exception::wrongParamException(msg, __FUNCTION__, __LINE__);
+
+#define LOG_SCRIPT_WRONG_PARAM_ERROR()  Exception::scriptWrongParamException(__FUNCTION__, __LINE__);

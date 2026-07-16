@@ -14,8 +14,6 @@
 
 class HObject;
 
-using String = QString;
-
 class Dynamic;
 
 using NullType = std::monostate;
@@ -28,7 +26,7 @@ using DynamicValue = std::variant<
     NullType,       // null
     bool,           // 布尔值
     double,         // 数值统一为double
-    String,         // 字符串
+    QString,         // 字符串
     ArrayType,      // 数组
     ObjectType,     // 对象
     FunctionType    // 函数
@@ -48,20 +46,20 @@ class Dynamic
     DynamicValue _value;
 
     // 将Dynamic转换为字符串的辅助函数
-    static String valueToString(const DynamicValue& val) {
+    static QString valueToString(const DynamicValue& val) {
         return std::visit(overloaded{
-            [](NullType) -> String { return "null"; },
-            [](bool b) -> String { return b ? "true" : "false"; },
-            [](double d) -> String {
+            [](NullType) -> QString { return "null"; },
+            [](bool b) -> QString { return b ? "true" : "false"; },
+            [](double d) -> QString {
                 if (d == static_cast<int64_t>(d)) {
                     return QString::number(static_cast<int64_t>(d));
                 }
                 return QString::number(d, 'g', 6);
             },
-            [](const String& s) -> String { return s; },
-            [](const ArrayType& arr) -> String {
+            [](const QString& s) -> QString { return s; },
+            [](const ArrayType& arr) -> QString {
                 /**
-                String result = "[";
+                QString result = "[";
                 for (size_t i = 0; i < arr.size(); ++i) {
                     if (i > 0) result += ", ";
                     result += arr[i].toString();
@@ -70,8 +68,8 @@ class Dynamic
                 **/
                 return "这是一个数组";
             },
-            [](const ObjectType&) -> String { return "[对象]"; },
-            [](const FunctionType&) -> String { return "[函数]"; }
+            [](const ObjectType&) -> QString { return "[对象]"; },
+            [](const FunctionType&) -> QString { return "[函数]"; }
         }, val);
     }
 
@@ -85,12 +83,12 @@ public:
     Dynamic(float v) : _value(static_cast<double>(v)) {}
     Dynamic(double v) : _value(v) {}
 
-    // 布尔构造
-    Dynamic(bool v) : _value(v) {}
+    // 布尔构造，加explicit防止指针隐式转换为bool
+    explicit Dynamic(bool v) : _value(v) {}
 
     // 字符串构造
-    Dynamic(const char* v) : _value(String(v)) {}
-    Dynamic(String v) : _value(std::move(v)) {}
+    Dynamic(const char* v) : _value(QString(v)) {}
+    Dynamic(QString v) : _value(std::move(v)) {}
 
     // 对象构造
     Dynamic(ObjectType v) : _value(std::move(v)) {}
@@ -116,8 +114,8 @@ public:
     Dynamic& operator=(int v) { _value = static_cast<double>(v); return *this; }
     Dynamic& operator=(double v) { _value = v; return *this; }
     Dynamic& operator=(bool v) { _value = v; return *this; }
-    Dynamic& operator=(const char* v) { _value = String(v); return *this; }
-    Dynamic& operator=(String v) { _value = std::move(v); return *this; }
+    Dynamic& operator=(const char* v) { _value = QString(v); return *this; }
+    Dynamic& operator=(QString v) { _value = std::move(v); return *this; }
     Dynamic& operator=(ObjectType v) { _value = std::move(v); return *this; }
     Dynamic& operator=(std::nullptr_t) { _value = NullType{}; return *this; }
 
@@ -125,7 +123,7 @@ public:
     bool isNull() const { return std::holds_alternative<NullType>(_value); }
     bool isBool() const { return std::holds_alternative<bool>(_value); }
     bool isNumber() const { return std::holds_alternative<double>(_value); }
-    bool isString() const { return std::holds_alternative<String>(_value); }
+    bool isString() const { return std::holds_alternative<QString>(_value); }
     bool isArray() const { return std::holds_alternative<ArrayType>(_value); }
     bool isObject() const { return std::holds_alternative<ObjectType>(_value); }
     bool isFunction() const { return std::holds_alternative<FunctionType>(_value); }
@@ -133,7 +131,7 @@ public:
     // 不安全获取,若数值类型不匹配则会抛异常！
     double asNumber() const { return std::get<double>(_value); }
     bool asBool() const { return std::get<bool>(_value); }
-    QString asString() const { return std::get<String>(_value); }
+    QString asString() const { return std::get<QString>(_value); }
     const ArrayType& asArray() const { return std::get<ArrayType>(_value); }
     ObjectType asObject() const { return std::get<ObjectType>(_value); }
     const FunctionType& asFunction() const { return std::get<FunctionType>(_value); }
@@ -191,7 +189,7 @@ public:
         return func(args);
     }
 
-    String toString() const {
+    QString toString() const {
         return valueToString(_value);
     }
 
@@ -201,10 +199,10 @@ public:
             [](NullType) { return false; },
             [](bool b) { return b; },
             [](double d) { return d != 0.0; },
-            [](const String& s) { return !s.isEmpty(); },
+            [](const QString& s) { return !s.isEmpty(); },
             [](const ArrayType& arr) { return !arr.empty(); },
             [](const ObjectType& obj) { return obj != nullptr; },
-            [](const FunctionType&) { HaxeError::throwRuntimeError("不支持函数转换为布尔值"); return false; }
+            [](const FunctionType&) { ScriptError::throwRuntimeError("不支持函数转换为布尔值"); return false; }
         }, _value);
     }
 
@@ -216,7 +214,7 @@ public:
                 [](NullType, NullType) { return true; },
                 [](bool a, bool b) { return a == b; },
                 [](double a, double b) { return a == b; },
-                [](const String& a, const String& b) { return a == b; },
+                [](const QString& a, const QString& b) { return a == b; },
                 [](const ArrayType& a, const ArrayType& b) {
                     if (a.size() != b.size()) return false;
                     for (size_t i = 0; i < a.size(); ++i) {
@@ -226,7 +224,7 @@ public:
                 },
                 [](const ObjectType& a, const ObjectType& b) { return a == b; },
                 [](const FunctionType&, const FunctionType&) { return false; },
-                [](auto, auto) { HaxeError::throwRuntimeError("不支持函数之间的比较"); return false; }  // 不会发生
+                [](auto, auto) { ScriptError::throwRuntimeError("不支持函数之间的比较"); return false; }  // 不会发生
             }, _value, other._value);
         }
         return false;
@@ -236,13 +234,13 @@ public:
 
     bool operator<(const Dynamic& other) const {
         if (_value.index() != other._value.index()) {
-            HaxeError::throwRuntimeError("不支持不同类型之间的比较");
+            ScriptError::throwRuntimeError("不支持不同类型之间的比较");
             return false;
         }
         return std::visit(overloaded{
             [](double a, double b) { return a < b; },
-            [](const String& a, const String& b) { return a < b; },
-            [](auto, auto) -> bool { HaxeError::throwRuntimeError("该类型不支持比较！"); return false;}
+            [](const QString& a, const QString& b) { return a < b; },
+            [](auto, auto) -> bool { ScriptError::throwRuntimeError("该类型不支持比较！"); return false;}
         }, _value, other._value);
     }
 
@@ -269,11 +267,11 @@ public:
             // 数字 + 数字
             [](double a, double b) -> Dynamic { return Dynamic(a + b); },
             // 字符串 + 字符串
-            [](const String& a, const String& b) -> Dynamic { return Dynamic(a + b); },
+            [](const QString& a, const QString& b) -> Dynamic { return Dynamic(a + b); },
             // 数字 + 字符串
-            [](double a, const String& b) -> Dynamic { return Dynamic(valueToString(DynamicValue(a)) + b); },
+            [](double a, const QString& b) -> Dynamic { return Dynamic(valueToString(DynamicValue(a)) + b); },
             // 字符串 + 数字
-            [](const String& a, double b) -> Dynamic { return Dynamic(a + valueToString(DynamicValue(b))); },
+            [](const QString& a, double b) -> Dynamic { return Dynamic(a + valueToString(DynamicValue(b))); },
             // 其他不支持
             [](auto, auto) -> Dynamic { throw std::runtime_error("不支持的加法操作！"); }
         }, _value, other._value);
@@ -293,7 +291,7 @@ public:
                 return Dynamic(-a);
             },
             [](auto) -> Dynamic {
-                HaxeError::throwRuntimeError("该数值不能用于取负数！");
+                ScriptError::throwRuntimeError("该数值不能用于取负数！");
                 return Dynamic();
             }
         }, _value);

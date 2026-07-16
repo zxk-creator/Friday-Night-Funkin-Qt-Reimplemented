@@ -4,7 +4,7 @@
 #include "ScriptLibs.h"
 #include <chrono>
 #include <cmath>
-
+#include "HaxeParser/type/Dynamic.h"
 
 // 获得自 1970‑01‑01 00:00:00 UTC 以来的秒数（保留两位小数）
 double ScriptLibs::now() {
@@ -14,4 +14,3 @@ double ScriptLibs::now() {
     // 转为秒，四舍五入保留两位小数
     return std::round(ms / 10.0) / 100.0;
 }
-

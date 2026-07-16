@@ -4,14 +4,15 @@
 
 #pragma once
 #include "FlxObject.h"
-#include "utils/lang/LangStringPool.h"
+#include "HaxeParser/type/HClass.h"
 
-class FlxState : public FlxObject
+// 相当于一个关卡对象，所有可见游戏对象都在这里
+class FlxState : public FlxObject, public HClass
 {
 public:
-    QString name;
+    QString stateName;
     QString QMLFileAbsolutePath;
 
-    FlxState(const QString& name,const QString& QMLFileAbsolutePath) : name(name),QMLFileAbsolutePath(QMLFileAbsolutePath) {}
+    FlxState(const QString& stateName,const QString& QMLFileAbsolutePath) : HClass(stateName,nullptr),stateName(stateName), QMLFileAbsolutePath(QMLFileAbsolutePath) {}
 };
 

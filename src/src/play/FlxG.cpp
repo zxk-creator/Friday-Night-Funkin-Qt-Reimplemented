@@ -1,4 +1,4 @@
-#include "play/GameWindow.h"
+#include "play/FlxG.h"
 
 void GameWindow::handleBeforeSync()
 {

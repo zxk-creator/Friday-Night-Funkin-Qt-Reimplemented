@@ -270,3 +270,122 @@ int FlxAnimationController::addByPrefix(const QString& animName, const QString& 
     anims[animName] = std::move(entry);
     return count;
 }
+
+// ========== FlxSprite methods (moved from header) ==========
+
+void FlxSprite::create()
+{
+}
+
+Dynamic FlxSprite::getField(const QString& fieldName)
+{
+    if (fieldName == "animation")
+    {
+        return Dynamic(std::static_pointer_cast<HObject>(animation));
+    }
+
+    return Dynamic();
+}
+
+QString FlxSprite::getName()
+{
+    return "FlxSprite";
+}
+
+void FlxSprite::hoverEnterEvent(QHoverEvent* event)
+{
+    QQuickItem::hoverEnterEvent(event);
+}
+
+void FlxSprite::hoverMoveEvent(QHoverEvent* event)
+{
+    QQuickItem::hoverMoveEvent(event);
+}
+
+void FlxSprite::hoverLeaveEvent(QHoverEvent* event)
+{
+    QQuickItem::hoverLeaveEvent(event);
+}
+
+// ========== FlxAnimationController methods (moved from header) ==========
+
+FlxAnimationController::FlxAnimationController(FlxSprite* owner)
+    : HClass("FlxAnimationController",nullptr), spriteOwner(owner)
+{
+    registerNativeMethod("addByPrefix", FunctionType([this](const std::vector<Dynamic>& args) -> Dynamic
+    {
+        if (args.size() == 3 && args[0].isString() && args[1].isString() && args[2].isNumber() && args[3].isBool())
+        {
+            this->addByPrefix(args[0].asString(), args[1].asString(), args[2].asNumber(), args[3].asBool());
+            return Dynamic();
+        }
+
+        LOG_ERROR(false,"您传入的函数参数不正确！");
+        return Dynamic();
+    }));
+}
+
+void FlxAnimationController::update(float deltaTime)
+{
+    if (currentAnim.second.frames.isEmpty() || currentAnim.second.finished)
+        return;
+
+    frameTimer += deltaTime;
+
+    if (frameTimer >= getCurrentFrameDuration())
+    {
+        switchToNextFrame();
+        frameTimer = 0;
+    }
+}
+
+void FlxAnimationController::play(const QString& animName, bool reset)
+{
+    auto it = anims.find(animName);
+    if (it == anims.end())
+    {
+        LOG_WARNING(false, "未找到动画" + animName);
+        return;
+    }
+
+    currentAnim.first = it.key();
+    currentAnim.second = it.value();
+    frameTimer = 0;
+    if (currentAnim.second.frames.size() <= 0) return;
+
+    spriteOwner->currentTex = currentAnim.second.frames[0].sourceTex;
+    if (reset) currentFrameIdx = 0;
+}
+
+float FlxAnimationController::getCurrentFrameDuration()
+{
+    int fps = currentAnim.second.fps;
+    if (fps <= 0) fps = 24;
+    return 1.0f / static_cast<float>(fps);
+}
+
+void FlxAnimationController::switchToNextFrame()
+{
+    int totalFrames = currentAnim.second.frames.size();
+    if (totalFrames == 0)
+    {
+        LOG_WARNING(false, "当前动画" + currentAnim.second.name + "没有帧！");
+        return;
+    }
+
+    // 到末尾了？循环回去，否则前进
+    if (currentFrameIdx + 1 >= totalFrames)
+    {
+        currentFrameIdx = 0;
+        if (!currentAnim.second.looped)
+            currentAnim.second.finished = true;
+    }
+    else
+    {
+        currentFrameIdx++;
+    }
+
+    const FlxFrame& curFrame = currentAnim.second.frames[currentFrameIdx];
+    spriteOwner->currentSampingPoint = curFrame.texPosition;
+    spriteOwner->currentTex = curFrame.sourceTex;
+}

@@ -13,9 +13,13 @@ public:
 
     virtual void create() = 0;
     virtual void update(float elapsed) = 0;
+    virtual void kill() = 0;
 
     // 代替kill
     virtual ~FlxObject() = default;
+
+    // 获得此类的名字
+    virtual QString getName() = 0;
 };
 
 Q_DECLARE_INTERFACE(FlxObject,"FlxObject")

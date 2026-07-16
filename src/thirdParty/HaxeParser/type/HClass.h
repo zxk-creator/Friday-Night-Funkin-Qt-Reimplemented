@@ -7,6 +7,7 @@
 #include <QString>
 #include <memory>
 #include "BaseClass.h"
+#include "../util/ExceptionUtil.h"
 #include "Dynamic.h"
 
 class Environment;
@@ -27,21 +28,42 @@ struct FieldDecl {
 class HClass : public HObject {
 public:
     // 类名
-    QString name;
+    QString clsName;
     // 父类指针，若没有则为nullptr
     std::shared_ptr<HClass> superclass;
-    // 方法存储为raw pointer，所有权在ClassStmt AST节点,{方法名，执行的函数体}
+    // 脚本方法：所有权在ClassStmt AST节点,{方法名，执行的函数体}
     QMap<QString, FunctionStmt*> methods;
-    // 为了区分，我们分开脚本方法和C++原生方法
+    // C++原生方法
     QMap<QString, FunctionType> nativeMethods;
     // 定义类的时候的环境闭包
     std::shared_ptr<Environment> closure;
 
-    HClass(QString name, std::shared_ptr<HClass> superclass)
-        : name(std::move(name)), superclass(std::move(superclass)) {}
+    HClass(QString clsName, std::shared_ptr<HClass> superclass)
+        : clsName(std::move(clsName)), superclass(std::move(superclass)) {}
 
-    // 字段声明列表（用于在实例化时创建字段并赋初值）
+    // 字段声明列表，用于在实例化时创建字段并赋初值
     std::vector<FieldDecl> fieldDecls;
+
+    // 下面是静态字段
+    // 脚本静态字段，值在类定义时初始化
+    QMap<QString, Dynamic> staticFields;
+    // 脚本静态方法
+    QMap<QString, FunctionStmt*> staticMethods;
+
+    // 查找脚本静态方法
+    FunctionStmt* findStaticScriptMethod(const QString& name) {
+        if (staticMethods.contains(name)) return staticMethods[name];
+        if (superclass) return superclass->findStaticScriptMethod(name);
+        return nullptr;
+    }
+
+    // 查找静态字段值
+    Dynamic* findStaticField(const QString& name) {
+        auto it = staticFields.find(name);
+        if (it != staticFields.end()) return &it.value();
+        if (superclass) return superclass->findStaticField(name);
+        return nullptr;
+    }
 
     // 查找要调用的方法，包括脚本方法和C++方法
     std::pair<const FunctionStmt*,FunctionType> findMethod(const QString& name) {
@@ -70,7 +92,7 @@ public:
     Dynamic callNativeMethod(const QString& name, std::vector<Dynamic>& args)
     {
         if (nativeMethods.contains(name)) return nativeMethods[name](args);
-        HaxeError::throwRuntimeError(QString("没有找到方法" + name + "!"));
+        ScriptError::throwRuntimeError(QString("没有找到方法" + name + "!"));
         return {};
     }
 
@@ -80,19 +102,19 @@ public:
     }
 
     // 子类请重写这个，这样通过反射获取到属性时才能正确返回
-    // 会沿 superclass 链向上递归查找
     virtual Dynamic getField(const QString& fieldName)
     {
         if (superclass) return superclass->getField(fieldName);
-        throw std::runtime_error(QString("没有找到字段" + fieldName + "!").toStdString());
+        ScriptError::throwNoSuchFieldError(fieldName);
     }
     // 子类请重写这个，这样通过反射设置属性时才能正确设置
-    // 会沿 superclass 链向上递归查找
     virtual void setField(const QString& fieldName, Dynamic value)
     {
         if (superclass) return superclass->setField(fieldName, value);
-        throw std::runtime_error(QString("没有找到字段" + fieldName + "!").toStdString());
+        ScriptError::throwNoSuchFieldError(fieldName);
     }
+
+    // 读取的字段包括静态字段
     virtual bool hasField(const QString& fieldName)
     {
         if (superclass) return superclass->hasField(fieldName);
@@ -108,5 +130,6 @@ public:
     // 声明的变量表
     QMap<QString, Dynamic> fields;
 
+    // 参数用于初始化其指向的类
     explicit HInstance(std::shared_ptr<HClass> klass) : klass(std::move(klass)) {}
 };

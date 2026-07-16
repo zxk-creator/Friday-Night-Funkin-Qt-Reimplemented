@@ -56,6 +56,11 @@ class Interpreter : public ExprVisitor, public StmtVisitor {
     }
 
 public:
+    // 注册全局变量（用于将 C++ 类对象暴露给脚本做静态访问）
+    void registerGlobal(const QString& name, const Dynamic& value) {
+        environment->define(name, value);
+    }
+
     // 求值表达式
     Dynamic evaluate(const Expr& expr) {
         return expr.accept(*this);
@@ -148,7 +153,7 @@ public:
                 }
                 return Dynamic(-right.asNumber());
             default:
-                HaxeError::throwRuntimeError("未知的一元运算符！");
+                ScriptError::throwRuntimeError("未知的一元运算符！");
         }
         return Dynamic();
     }
@@ -183,7 +188,7 @@ public:
                 return Dynamic(left != right);
 
             default:
-                HaxeError::throwRuntimeError("未知的二元运算符，这不应该发生，说明是C++解释器出了问题！");
+                ScriptError::throwRuntimeError("未知的二元运算符，这不应该发生，说明是C++解释器出了问题！");
         }
         return Dynamic();
     }
@@ -357,6 +362,27 @@ public:
         });
     }
 
+    // 创建静态方法绑定（没有 this，只有闭包）
+    Dynamic createStaticBoundMethod(const FunctionStmt* method,
+                                     std::shared_ptr<HClass> definingClass) {
+        return Dynamic([method, definingClass, this](const std::vector<Dynamic>& args) mutable -> Dynamic {
+            if (args.size() != method->params.size()) {
+                throw std::runtime_error(QString("静态方法 '%1' 参数数量不匹配，期望 %2 个，传入 %3 个。")
+                    .arg(method->name.lexeme).arg(method->params.size()).arg(args.size()).toStdString());
+            }
+            auto env = std::make_shared<Environment>(definingClass->closure);
+            for (size_t i = 0; i < method->params.size(); ++i) {
+                env->define(method->params[i].lexeme, args[i]);
+            }
+            try {
+                executeBlock(method->body, env);
+            } catch (ReturnException& e) {
+                return e.getValue();
+            }
+            return Dynamic();
+        });
+    }
+
     // 类声明：创建HClass并绑定到变量名
     Dynamic visitClassStmt(const ClassStmt& stmt) override {
         // 解析父类
@@ -394,7 +420,21 @@ public:
             klass->fieldDecls.push_back({field.first.lexeme, field.second.get()});
         }
 
-        // 绑定到变量名
+        // ====== 静态成员处理 ======
+        // 静态方法
+        for (const auto& method : stmt.staticMethods) {
+            klass->staticMethods[method->name.lexeme] = method.get();
+        }
+        // 静态字段：在类定义时求值并存储
+        for (const auto& field : stmt.staticFields) {
+            if (field.second) {
+                klass->staticFields[field.first.lexeme] = evaluate(*field.second);
+            } else {
+                klass->staticFields[field.first.lexeme] = Dynamic();
+            }
+        }
+
+        // 绑定到变量名（类名本身），这样脚本就可以写 ClassName.field 访问静态成员
         environment->define(stmt.name.lexeme, Dynamic(std::move(klass)));
         return Dynamic();
     }
@@ -447,33 +487,61 @@ public:
             throw std::runtime_error("只有对象实例有属性。");
         }
 
+        // ====== 先尝试 HInstance（实例成员） ======
         auto instance = std::dynamic_pointer_cast<HInstance>(object.asObject());
-        if (!instance) {
-            throw std::runtime_error("只有对象实例有属性。");
+        if (instance) {
+            // 先查找脚本字段
+            auto fieldIt = instance->fields.find(expr.name.lexeme);
+            if (fieldIt != instance->fields.end()) {
+                return fieldIt.value();
+            }
+
+            // 查找方法,先脚本后C++,必须放在 getField 之前，因为方法名不是字段
+            if (const FunctionStmt* method = instance->klass->findMethod(expr.name.lexeme).first) {
+                return createBoundMethod(instance, method, instance->klass);
+            }
+            if (const FunctionType nativeMethod = instance->klass->findMethod(expr.name.lexeme).second)
+            {
+                return Dynamic(nativeMethod);
+            }
+
+            // 再尝试反射到C++字段
+            if (instance->klass && instance->klass->hasField(expr.name.lexeme)) {
+                return instance->klass->getField(expr.name.lexeme);
+            }
+
+            // 都没有，直接抛异常
+            throw std::runtime_error(QString("对象中未找到属性 '%1'。").arg(expr.name.lexeme).toStdString());
         }
 
-        // 先查找脚本字段
-        auto fieldIt = instance->fields.find(expr.name.lexeme);
-        if (fieldIt != instance->fields.end()) {
-            return fieldIt.value();
+        // ====== 再尝试 HClass（静态成员） ======
+        auto klassObj = std::dynamic_pointer_cast<HClass>(object.asObject());
+        if (klassObj) {
+            // 1. 脚本静态字段
+            Dynamic* sf = klassObj->findStaticField(expr.name.lexeme);
+            if (sf) return *sf;
+
+            // 2. 脚本静态方法
+            if (const FunctionStmt* sm = klassObj->findStaticScriptMethod(expr.name.lexeme)) {
+                return createStaticBoundMethod(sm, klassObj);
+            }
+
+            // 3. C++原生方法（nativeMethods 同时服务于实例和静态调用）
+            if (const FunctionType nativeMethod = klassObj->findMethod(expr.name.lexeme).second)
+            {
+                return Dynamic(nativeMethod);
+            }
+
+            // 4. C++反射静态字段（getStaticField/hasField）
+            //    传给C++原生类自己处理（比如 FlxG 通过 getStaticField 返回成员）
+            if (klassObj->hasField(expr.name.lexeme)) {
+                return klassObj->getStaticField(expr.name.lexeme);
+            }
+
+            throw std::runtime_error(QString("类中未找到静态成员 '%1'。").arg(expr.name.lexeme).toStdString());
         }
 
-        // 查找方法,先脚本后C++,必须放在 getField 之前，因为方法名不是字段
-        if (const FunctionStmt* method = instance->klass->findMethod(expr.name.lexeme).first) {
-            return createBoundMethod(instance, method, instance->klass);
-        }
-        if (const FunctionType nativeMethod = instance->klass->findMethod(expr.name.lexeme).second)
-        {
-            return Dynamic(nativeMethod);
-        }
-
-        // 再尝试反射到C++字段
-        if (instance->klass && instance->klass->hasField(expr.name.lexeme)) {
-            return instance->klass->getField(expr.name.lexeme);
-        }
-
-        // 都没有，直接抛异常
-        throw std::runtime_error(QString("对象中未找到属性 '%1'。").arg(expr.name.lexeme).toStdString());
+        throw std::runtime_error("只有对象实例或类可以有属性。");
     }
 
     // obj.field = value
@@ -487,31 +555,51 @@ public:
             throw std::runtime_error("只有对象实例可以设置属性。");
         }
 
-        auto instance = std::dynamic_pointer_cast<HInstance>(object.asObject());
-        if (!instance) {
-            throw std::runtime_error("只有对象实例可以设置属性。");
-        }
-
-
         Dynamic value = evaluate(*expr.value);
 
-        // 字段已经在脚本层存在直接更新
-        if (instance->fields.find(expr.name.lexeme) != instance->fields.end())
-        {
+        // ====== 先尝试 HInstance（实例字段写入） ======
+        auto instance = std::dynamic_pointer_cast<HInstance>(object.asObject());
+        if (instance) {
+            // 字段已经在脚本层存在直接更新
+            if (instance->fields.find(expr.name.lexeme) != instance->fields.end())
+            {
+                instance->fields[expr.name.lexeme] = value;
+                return value;
+            }
+
+            // 字段在C++层存在通过C++ setter
+            if (instance->klass && instance->klass->hasField(expr.name.lexeme))
+            {
+                instance->klass->setField(expr.name.lexeme, value);
+                return value;
+            }
+
+            // 都没有自动在脚本层创建新字段
             instance->fields[expr.name.lexeme] = value;
             return value;
         }
 
-        // 字段在C++层存在通过C++ setter
-        if (instance->klass && instance->klass->hasField(expr.name.lexeme))
-        {
-            instance->klass->setField(expr.name.lexeme, value);
-            return value;
+        // ====== 再尝试 HClass（静态字段写入） ======
+        auto klassObj = std::dynamic_pointer_cast<HClass>(object.asObject());
+        if (klassObj) {
+            // 脚本静态字段存在直接更新
+            Dynamic* sf = klassObj->findStaticField(expr.name.lexeme);
+            if (sf) {
+                *sf = value;
+                return value;
+            }
+
+            // C++反射静态字段存在通过 C++ setStaticField
+            if (klassObj->hasField(expr.name.lexeme)) {
+                klassObj->setStaticField(expr.name.lexeme, value);
+                return value;
+            }
+
+            // 找不到，抛异常（不自动创建静态字段）
+            throw std::runtime_error(QString("类中未找到静态字段 '%1'。").arg(expr.name.lexeme).toStdString());
         }
 
-        // 都没有自动在脚本层创建新字段
-        instance->fields[expr.name.lexeme] = value;
-        return value;
+        throw std::runtime_error("只有对象实例或类可以设置属性。");
     }
 
     // this关键字从环境中查找

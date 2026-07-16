@@ -19,8 +19,6 @@ class FlxSprite;
 class FlxFrame;
 class FlxAnimation;
 
-using ControllerPtr = std::shared_ptr<class FlxAnimationController>;
-
 struct FlxRect
 {
     int x = 0;
@@ -90,7 +88,7 @@ class FlxSprite : public QQuickItem, public FlxObject, public HClass
 public:
     QVector<QSGTexture*> altas;
     QSGTexture* currentTex = nullptr;
-    ControllerPtr animation;
+    SharedPtr<class FlxAnimationController> animation;
     QVector<FlxAnimation> animations;
     FlxRect currentSampingPoint;
 
@@ -122,48 +120,28 @@ public:
     // 外部调用这个来加载纹理图集
     void loadGraphic(QVector<QString>& imageAbsolutePaths, CharacterRenderType renderType);
 
-    void create() override
-    {
-
-    }
+    void create() override;
 
     void update(float elapsed) override;
 
-    Dynamic getField(const QString& fieldName) override
-    {
-        if (fieldName == "animation")
-        {
-            return animation.get();
-        }
+    void kill() override {
 
-        return Dynamic();
     }
+
+    Dynamic getField(const QString& fieldName) override;
+    QString getName() override;
 
 protected:
-    void hoverEnterEvent(QHoverEvent* event) override
-    {
-
-        QQuickItem::hoverEnterEvent(event);
-    }
-
-    void hoverMoveEvent(QHoverEvent* event) override
-    {
-
-        QQuickItem::hoverMoveEvent(event);
-    }
-
-    void hoverLeaveEvent(QHoverEvent* event) override
-    {
-
-        QQuickItem::hoverLeaveEvent(event);
-    }
+    void hoverEnterEvent(QHoverEvent* event) override;
+    void hoverMoveEvent(QHoverEvent* event) override;
+    void hoverLeaveEvent(QHoverEvent* event) override;
 };
 
 
 
 
 // 动画控制器
-class FlxAnimationController : HClass
+class FlxAnimationController : public HClass
 {
     FlxSprite* spriteOwner;
 
@@ -183,20 +161,7 @@ class FlxAnimationController : HClass
     int currentFrameIdx = 0;
 
 public:
-    explicit FlxAnimationController(FlxSprite* owner) : HClass("FlxAnimationController",nullptr), spriteOwner(owner)
-    {
-        registerNativeMethod("addByPrefix", FunctionType([this](const std::vector<Dynamic>& args) -> Dynamic
-        {
-            if (args.size() == 3 && args[0].isString() && args[1].isString() && args[2].isNumber() && args[3].isBool())
-            {
-                this->addByPrefix(args[0].asString(), args[1].asString(), args[2].asNumber(), args[3].asBool());
-                return Dynamic();
-            }
-
-            LOG_ERROR(false,"您传入的函数参数不正确！");
-            return Dynamic();
-        }));
-    }
+    explicit FlxAnimationController(FlxSprite* owner);
 
     /**
      * 从已解析的图集中，按XML帧名前缀注册一条播放动画
@@ -213,73 +178,16 @@ public:
     int addByPrefix(const QString& animName, const QString& xmlPrefix, int fps = 24, bool looped = true);
 
     // 请在FlxSprite的beforeSynchronizing里面调用这个。这是模拟的每帧循环
-    void update(float deltaTime)
-    {
-        if (currentAnim.second.frames.isEmpty() || currentAnim.second.finished)
-            return;
-
-        frameTimer += deltaTime;
-
-        if (frameTimer >= getCurrentFrameDuration())
-        {
-            switchToNextFrame();
-            frameTimer = 0;
-        }
-    }
+    void update(float deltaTime);
 
     /**
      * 播放指定动画
      */
-    void play(const QString& animName, bool reset = true)
-    {
-        auto it = anims.find(animName);
-        if (it == anims.end())
-        {
-            LOG_WARNING(false, "未找到动画" + animName);
-            return;
-        }
-
-        currentAnim.first = it.key();
-        currentAnim.second = it.value();
-        frameTimer = 0;
-        if (currentAnim.second.frames.size() <= 0) return;
-
-        spriteOwner->currentTex = currentAnim.second.frames[0].sourceTex;
-        if (reset) currentFrameIdx = 0;
-    }
+    void play(const QString& animName, bool reset = true);
 
     // 获取当前帧持续多少秒
-    float getCurrentFrameDuration()
-    {
-        int fps = currentAnim.second.fps;
-        if (fps <= 0) fps = 24;
-        return 1.0f / static_cast<float>(fps);
-    }
+    float getCurrentFrameDuration();
 
     // 切换到下一帧
-    void switchToNextFrame()
-    {
-        int totalFrames = currentAnim.second.frames.size();
-        if (totalFrames == 0)
-        {
-            LOG_WARNING(false, "当前动画" + currentAnim.second.name + "没有帧！");
-            return;
-        }
-
-        // 到末尾了？循环回去，否则前进
-        if (currentFrameIdx + 1 >= totalFrames)
-        {
-            currentFrameIdx = 0;
-            if (!currentAnim.second.looped)
-                currentAnim.second.finished = true;
-        }
-        else
-        {
-            currentFrameIdx++;
-        }
-
-        const FlxFrame& curFrame = currentAnim.second.frames[currentFrameIdx];
-        spriteOwner->currentSampingPoint = curFrame.texPosition;
-        spriteOwner->currentTex = curFrame.sourceTex;
-    }
+    void switchToNextFrame();
 };

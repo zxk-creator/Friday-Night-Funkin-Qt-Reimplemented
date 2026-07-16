@@ -371,14 +371,20 @@ class ClassStmt : public Stmt {
 public:
     Token name;
     std::unique_ptr<Expr> superclass;  // Variable 或 nullptr
+    // 实例成员
     std::vector<std::unique_ptr<FunctionStmt>> methods;
-    // 字段声明: {字段名, 初始化表达式}，无初始化式时 second == nullptr
     std::vector<std::pair<Token, std::unique_ptr<Expr>>> fields;
+    // 静态成员
+    std::vector<std::unique_ptr<FunctionStmt>> staticMethods;
+    std::vector<std::pair<Token, std::unique_ptr<Expr>>> staticFields;
 
     ClassStmt(Token name, std::unique_ptr<Expr> superclass,
               std::vector<std::unique_ptr<FunctionStmt>> methods,
-              std::vector<std::pair<Token, std::unique_ptr<Expr>>> fields)
-        : name(name), superclass(std::move(superclass)), methods(std::move(methods)), fields(std::move(fields)) {}
+              std::vector<std::pair<Token, std::unique_ptr<Expr>>> fields,
+              std::vector<std::unique_ptr<FunctionStmt>> staticMethods = {},
+              std::vector<std::pair<Token, std::unique_ptr<Expr>>> staticFields = {})
+        : name(name), superclass(std::move(superclass)), methods(std::move(methods)), fields(std::move(fields)),
+          staticMethods(std::move(staticMethods)), staticFields(std::move(staticFields)) {}
 
     Dynamic accept(StmtVisitor& visitor) const override {
         return visitor.visitClassStmt(*this);

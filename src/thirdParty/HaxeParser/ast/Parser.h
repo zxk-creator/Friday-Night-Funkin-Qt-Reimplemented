@@ -315,14 +315,21 @@ class Parser {
         // 解析方法和字段声明
         std::vector<std::unique_ptr<FunctionStmt>> methods;
         std::vector<std::pair<Token, std::unique_ptr<Expr>>> fields;
+        std::vector<std::unique_ptr<FunctionStmt>> staticMethods;
+        std::vector<std::pair<Token, std::unique_ptr<Expr>>> staticFields;
         while (!check(ETokenType::RIGHT_BRACE) && !isAtEnd()) {
-            // 注解和修饰符（public/protected/private 等）
+            // 注解和修饰符（public/protected/private/static 等）
             consumeAnnotations();
-            consumeMethodModifiers();
+            bool isStatic = consumeMethodModifiers();
 
             if (match({ETokenType::FUNCTION})) {
-                methods.push_back(std::unique_ptr<FunctionStmt>(
-                    static_cast<FunctionStmt*>(functionDeclaration().release())));
+                auto func = functionDeclaration();
+                if (isStatic)
+                    staticMethods.push_back(std::unique_ptr<FunctionStmt>(
+                        static_cast<FunctionStmt*>(func.release())));
+                else
+                    methods.push_back(std::unique_ptr<FunctionStmt>(
+                        static_cast<FunctionStmt*>(func.release())));
             } else if (match({ETokenType::VAR})) {
                 // 字段声明：存储字段名和初始值表达式
                 Token fieldName = consume(ETokenType::IDENTIFIER, "字段名期望。");
@@ -332,7 +339,10 @@ class Parser {
                     initializer = expression();
                 }
                 consume(ETokenType::SEMICOLON, "字段声明后期望 ';'。");
-                fields.push_back({fieldName, std::move(initializer)});
+                if (isStatic)
+                    staticFields.push_back({fieldName, std::move(initializer)});
+                else
+                    fields.push_back({fieldName, std::move(initializer)});
             } else {
                 throw std::runtime_error("类体内只允许方法或字段定义。");
             }
@@ -340,7 +350,8 @@ class Parser {
 
         consume(ETokenType::RIGHT_BRACE, "类体后期望 '}'。");
 
-        return std::make_unique<ClassStmt>(name, std::move(superclass), std::move(methods), std::move(fields));
+        return std::make_unique<ClassStmt>(name, std::move(superclass), std::move(methods), std::move(fields),
+            std::move(staticMethods), std::move(staticFields));
     }
 
     // 消费注解: @xxx 或 @xxx(...) （被忽略）
@@ -367,13 +378,15 @@ class Parser {
         }
     }
 
-    // 消费方法修饰符: public, private, protected, override, final, inline, macro, static （被忽略）
-    void consumeMethodModifiers() {
+    // 消费方法修饰符，返回 true 表示有 static
+    bool consumeMethodModifiers() {
+        bool isStatic = false;
         while (match({ETokenType::PUBLIC, ETokenType::PRIVATE, ETokenType::PROTECTED,
                       ETokenType::OVERRIDE, ETokenType::FINAL, ETokenType::INLINE,
                       ETokenType::MACRO, ETokenType::STATIC})) {
-            // 直接忽略
+            if (previous().type == ETokenType::STATIC) isStatic = true;
         }
+        return isStatic;
     }
 
     // 消费函数名（可以是标识符或 "new" 关键字）

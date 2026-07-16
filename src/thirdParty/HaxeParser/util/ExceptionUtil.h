@@ -6,7 +6,7 @@
 #include <stdexcept>
 #include <QString>
 
-namespace HaxeError {
+namespace ScriptError {
     enum class OperatorKind
     {
         add,
@@ -70,5 +70,9 @@ namespace HaxeError {
     inline void throwRuntimeError(const QString& msg)
     {
         throw std::runtime_error(msg.toStdString());
+    }
+
+    inline void throwNoSuchFieldError(const QString& fieldName) {
+        throw std::runtime_error(("没有找到字段或方法" + fieldName + "!").toStdString());
     }
 }

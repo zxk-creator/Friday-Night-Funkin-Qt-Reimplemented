@@ -89,14 +89,14 @@ set(PROJECT_SOURCES
         src/include/play/game/FlxCamera.h
         src/include/play/game/FlxState.h
         src/src/play/game/FlxSprite.cpp
-        src/include/play/GameWindow.h
-        src/src/play/GameWindow.cpp
+        src/include/play/FlxG.h
+        src/src/play/FlxG.cpp
         src/include/play/states/MenuState.h
-        src/include/play/game/FlxG.h
         src/thirdParty/HaxeParser/Init.h
         src/thirdParty/HaxeParser/util/reflect/Reflect.cpp
         src/thirdParty/HaxeParser/lib/ScriptLibs.cpp
         src/include/utils/window/WindowUtil.h
+        src/include/TypeAlias.h
 )
 
 set(CMAKE_AUTORCC ON)

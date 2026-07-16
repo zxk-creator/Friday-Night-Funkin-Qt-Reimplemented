@@ -4,6 +4,8 @@
 
 #pragma once
 
+class Dynamic;
+
 namespace ScriptLibs
 {
     double now();

@@ -53,7 +53,16 @@ void registerSomeClass()
 // 注册一些本地函数
 void registerSomeFunction(Interpreter* interpreter)
 {
+    interpreter->registerNativeFunc("getContext", FunctionType([](const std::vector<Dynamic>&) -> Dynamic {
+    return Dynamic(std::make_shared<HInstance>(
+        std::shared_ptr<HClass>(Context::_FlxG)
+    ));
+}));
+}
 
+void registerSomeStatic(Interpreter* interpreter) {
+    auto context = std::make_shared<Context>();
+    interpreter->registerGlobal("Context",Dynamic(std::make_shared<HInstance>(context)));
 }
 
 
@@ -80,9 +89,10 @@ int main(int argc, char *argv[])
     QApplication app(argc, argv);
     app.setWindowIcon(QIcon(":/qt/qml/fnf/BF.ico"));
 
-    auto gameWindow = new GameWindow();
-    Context::gameWindow = gameWindow;
+    auto gameWindow = std::make_shared<FlxG>();
+    Context::_FlxG = gameWindow;
     gameWindow->init();
+
 
     #ifdef Q_OS_ANDROID
     requestAndroidPermission();
@@ -98,15 +108,16 @@ int main(int argc, char *argv[])
     QColor color;
     gameWindow->setColor(color.black());
 
-    // 先设置 context 属性，再加载 QML
     init(*gameWindow->engine());
     gameWindow->setSource(QUrl("qrc:/qt/qml/fnf/QML/main.qml"));
 
     InterestingThings::damn(false);
 
+    // 解释器是全局唯一的！
     auto interpreter = new Interpreter();
     Context::interpreter = interpreter;
     registerSomeClass();
+
 
     // 测试：放首歌听听
     auto test = new FunkinSound(false,PathVS::file("music/freakyMenu/freakyMenu","MUSIC","").value(),ESoundType::uiSound,true,"freakyMenu");
